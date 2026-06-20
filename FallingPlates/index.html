@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>צלחות נופלות 🍽️ — משחק הקלדה לילדים</title>
+<style>
+  /* ---------- Theme ---------- */
+  :root{
+    --sky:#cdeafe;
+    --sky-2:#eaf6ff;
+    --cream:#fff8ef;
+    --ink:#2c3e57;
+    --ink-soft:#6b7d95;
+    --rim:#7cc6ff;
+    --pink:#ff8fab;
+    --pink-deep:#f4628a;
+    --blue:#5aa9f7;
+    --blue-deep:#3a7fd6;
+    --good:#5fbf6a;
+    --sun:#ffd166;
+    --shadow:0 6px 0 rgba(0,0,0,.12), 0 12px 24px rgba(0,0,0,.12);
+    --radius:22px;
+    font-size:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Comic Sans MS","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 15% 10%, #fff 0 7%, transparent 8%),
+      radial-gradient(circle at 82% 16%, #fff 0 5%, transparent 6%),
+      linear-gradient(160deg, var(--sky), var(--sky-2) 55%, var(--cream));
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+  }
+  #app{
+    max-width:820px;
+    margin:0 auto;
+    min-height:100%;
+    padding:14px 16px 22px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen{display:none; animation:fade .35s ease both; flex:1; flex-direction:column;}
+  .screen.active{display:flex;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:inherit; font-weight:800; cursor:pointer; border:none;
+    background:var(--blue); color:#fff; border-radius:var(--radius);
+    padding:16px 26px; font-size:1.25rem; box-shadow:var(--shadow);
+    transition:transform .08s ease, filter .15s ease;
+    text-shadow:0 2px 0 rgba(0,0,0,.12);
+  }
+  .btn:active{transform:translateY(3px);}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.big{font-size:1.7rem; padding:20px 44px;}
+  .btn.ghost{background:#fff; color:var(--ink); box-shadow:0 4px 0 rgba(0,0,0,.1);}
+  .btn.green{background:var(--good);}
+  .icon-btn{
+    background:#fff; border:none; border-radius:50%; width:48px; height:48px;
+    font-size:1.4rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.1);
+  }
+  .icon-btn:active{transform:translateY(2px);}
+  .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
+
+  /* ---------- Title screen ---------- */
+  .hero{text-align:center; padding:18px 6px 6px; margin:auto 0;}
+  .logo{
+    font-size:clamp(2.4rem,8.5vw,4rem); font-weight:900; line-height:1.05;
+    color:var(--blue-deep); text-shadow:0 4px 0 #fff, 0 6px 0 rgba(0,0,0,.12);
+    margin:6px 0 2px;
+  }
+  .logo .em{display:inline-block; animation:bob 2.2s ease-in-out infinite;}
+  .tagline{font-size:1.15rem; color:var(--ink-soft); margin:0 0 16px;}
+  .title-plates{font-size:2.6rem; letter-spacing:8px; margin:6px 0 18px; opacity:.95;}
+  .title-plates span{display:inline-block; animation:bob 2.6s ease-in-out infinite;}
+  .title-plates span:nth-child(2){animation-delay:.2s;}
+  .title-plates span:nth-child(3){animation-delay:.4s;}
+  .title-plates span:nth-child(4){animation-delay:.6s;}
+  .title-plates span:nth-child(5){animation-delay:.8s;}
+  .title-actions{display:flex; flex-direction:column; align-items:center; gap:12px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+  .topbar .spacer{flex:1;}
+  .level-tag{font-weight:900; font-size:1.05rem; text-align:center; line-height:1.1;}
+  .level-tag small{display:block; font-weight:700; color:var(--ink-soft); font-size:.8rem;}
+  .lang-pill{
+    background:#fff; border-radius:999px; padding:8px 16px; font-weight:900;
+    box-shadow:0 4px 0 rgba(0,0,0,.1); font-size:1.05rem; white-space:nowrap;
+  }
+
+  /* ---------- Progress row ---------- */
+  .progress-row{display:flex; align-items:center; gap:12px; margin:4px 2px 10px;}
+  .saved-count{font-weight:900; white-space:nowrap; font-size:1.1rem;}
+  .bar{
+    flex:1; height:18px; background:#fff; border-radius:999px; overflow:hidden;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.12);
+  }
+  .bar-fill{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--good), var(--sun));
+    border-radius:999px; transition:width .3s ease;
+  }
+
+  /* ---------- Play arena ---------- */
+  .arena{
+    position:relative; flex:1; min-height:480px;
+    background:linear-gradient(180deg, #f3e7d2 0%, #f7eede 58%, #efe0c6 100%);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .hint{
+    position:absolute; top:8px; left:0; right:0; text-align:center;
+    font-weight:800; color:var(--ink-soft); font-size:1rem; pointer-events:none;
+    opacity:.9; z-index:5;
+  }
+
+  /* ---------- Kitchen scenery (behind the plates) ---------- */
+  .kitchen{position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden;}
+  /* faint wall tiling above the floor */
+  .kitchen .wall{
+    position:absolute; left:0; right:0; top:0; bottom:46px;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.025) 0 1px, transparent 1px 56px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.02) 0 1px, transparent 1px 56px);
+  }
+  .kitchen .item{position:absolute; filter:drop-shadow(0 4px 4px rgba(0,0,0,.12));}
+  .kitchen .window{left:5%; top:22px; width:clamp(120px,20vw,168px);}
+  .kitchen .shelf{left:50%; top:30px; transform:translateX(-50%); width:clamp(130px,22vw,180px);}
+  .kitchen .clock{right:6%; top:26px; width:clamp(48px,8vw,68px);}
+  .kitchen .fridge{right:3%; bottom:30px; width:clamp(86px,15vw,120px);}
+  .kitchen .counter{left:2%; bottom:30px; width:clamp(150px,26vw,210px);}
+  .kitchen svg{display:block; width:100%; height:auto;}
+  @media (max-width:560px){
+    .kitchen .shelf{display:none;}   /* keep it uncluttered on small screens */
+  }
+  .floor{
+    position:absolute; left:0; right:0; bottom:0; height:46px;
+    background:repeating-linear-gradient(45deg, #e7d4b6 0 16px, #d9c19c 16px 32px);
+    border-top:5px solid #b9986a; z-index:3;
+  }
+  .floor:before{
+    content:""; position:absolute; left:0; right:0; top:-7px; height:7px;
+    background:rgba(0,0,0,.06);
+  }
+
+  /* ---------- Falling plate ---------- */
+  .plate{
+    position:absolute; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    z-index:2; will-change:top;
+  }
+  .plate .pic{
+    font-size:2.1rem; line-height:1;
+    filter:drop-shadow(0 3px 2px rgba(0,0,0,.18));
+    animation:bob 2.4s ease-in-out infinite;
+  }
+  .disc{
+    display:flex; align-items:center; justify-content:center;
+    min-width:84px; height:84px; border-radius:50%;
+    background:radial-gradient(circle at 38% 30%, #ffffff, #eef4f9 68%, #dde7ef);
+    border:6px solid var(--rim);
+    box-shadow:0 6px 12px rgba(0,0,0,.18), inset 0 -6px 10px rgba(0,0,0,.06), inset 0 6px 10px rgba(255,255,255,.7);
+    font-weight:900; font-size:2.5rem; color:var(--ink);
+    text-shadow:0 2px 0 rgba(255,255,255,.6);
+  }
+  .plate.word .disc{
+    border-radius:50%; width:122px; min-width:122px; height:122px;
+    padding:0 10px; font-size:1.5rem; gap:0; letter-spacing:0;
+    white-space:nowrap;
+  }
+  .disc .ch{display:inline-block; transition:color .1s, transform .1s;}
+  .disc .ch.done{color:var(--good); transform:translateY(-2px);}
+  .plate.focus .disc{border-color:var(--sun); box-shadow:0 6px 12px rgba(0,0,0,.18), 0 0 0 4px rgba(255,209,102,.5);}
+
+  .plate.save{animation:save-pop .3s ease forwards;}
+  .plate.wobble .disc{animation:wobble .4s ease;}
+  /* plate settles into the baker's hands (no upward fly) */
+  @keyframes save-pop{
+    0%{transform:translateX(-50%) scale(1);}
+    45%{transform:translateX(-50%) scale(1.16);}
+    100%{transform:translateX(-50%) scale(.35); opacity:0;}
+  }
+
+  /* ---------- Plate shatter (a missed plate breaks into pieces) ---------- */
+  .plate.breaking .disc{
+    background:transparent !important; border-color:transparent !important;
+    color:transparent !important; box-shadow:none !important; animation:none;
+  }
+  .plate.breaking .pic{opacity:0; transition:opacity .15s ease;}
+  .shard{
+    position:absolute; left:50%; top:50%; width:22px; height:20px;
+    background:radial-gradient(circle at 38% 32%, #ffffff, #e6eef5 70%, #cfdae4);
+    border:2px solid var(--rim); will-change:transform, opacity;
+    animation:shatter .6s ease-out forwards;
+  }
+  .shard.s0{clip-path:polygon(50% 0, 100% 78%, 0 100%);}
+  .shard.s1{clip-path:polygon(0 0, 100% 28%, 72% 100%);}
+  .shard.s2{clip-path:polygon(0 22%, 100% 0, 100% 100%, 22% 92%);}
+  @keyframes shatter{
+    0%{transform:translate(-50%,-50%) rotate(0) scale(1); opacity:1;}
+    100%{transform:translate(calc(-50% + var(--dx,0px)), calc(-50% + var(--dy,40px)))
+          rotate(var(--rot,180deg)) scale(.5); opacity:0;}
+  }
+
+  /* ---------- Baker ---------- */
+  .baker{
+    position:absolute; bottom:30px; left:50%; transform:translateX(-50%);
+    z-index:4; line-height:1; pointer-events:none;
+    filter:drop-shadow(0 4px 3px rgba(0,0,0,.25));
+  }
+  .baker .body{display:block; width:240px; height:auto; transform-origin:50% 88%; animation:fret .45s ease-in-out infinite;}
+  .baker .sweat{
+    position:absolute; top:90px; right:150px; width:24px; z-index:2;
+    animation:sweat 1.1s ease-in-out infinite; opacity:.85;
+  }
+  .baker .sweat svg{display:block; width:100%; height:auto;}
+  .baker.catching .body{animation:reach .35s ease-in-out infinite;}
+  @keyframes fret{0%,100%{transform:rotate(-4deg);} 50%{transform:rotate(4deg);}}
+  @keyframes reach{0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-16px) scale(1.05);}}
+  @keyframes sweat{0%{transform:translateY(0); opacity:.85;} 70%{opacity:.85;} 100%{transform:translateY(26px); opacity:0;}}
+
+  /* ---------- Saved shelf ---------- */
+  .shelf{
+    display:flex; flex-wrap:wrap; gap:4px; justify-content:center;
+    min-height:30px; margin:8px 2px 0; font-size:1.4rem; line-height:1;
+  }
+  .shelf .s{animation:pop .35s ease both;}
+
+  /* ---------- Level select ---------- */
+  .select-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .grid-levels{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px;}
+  .level-card{
+    background:#fff; border-radius:20px; box-shadow:var(--shadow); padding:14px 10px;
+    text-align:center; cursor:pointer; border:3px solid transparent; transition:transform .1s;
+  }
+  .level-card:active{transform:translateY(2px);}
+  .level-card .lc-emoji{font-size:2.6rem;}
+  .level-card .lc-name{font-weight:900; margin:4px 0 2px;}
+  .level-card .lc-sub{font-size:.82rem; color:var(--ink-soft); min-height:1.6em;}
+  .level-card .lc-stars{font-size:1.1rem; letter-spacing:2px; margin-top:6px; color:var(--sun);}
+  .level-card.locked{opacity:.55; cursor:not-allowed; background:#eef1f5;}
+  .level-card.locked .lc-emoji{filter:grayscale(1);}
+
+  /* ---------- Endless Challenge banner (on the map) ---------- */
+  .endless-banner{
+    display:block; width:100%; text-align:center; cursor:pointer; color:#fff;
+    font-family:inherit; border:none; border-radius:20px; margin-bottom:16px;
+    padding:14px 16px; box-shadow:var(--shadow);
+    background:linear-gradient(135deg,#7b5cff 0%,#b06bff 55%,#ff8fab 100%);
+    transition:transform .08s ease, filter .15s ease;
+  }
+  .endless-banner:hover{filter:brightness(1.05);}
+  .endless-banner:active{transform:translateY(2px);}
+  .eb-title{font-size:1.45rem; font-weight:900; text-shadow:0 2px 0 rgba(0,0,0,.18);}
+  .eb-sub{font-size:.95rem; opacity:.96; margin-top:3px;}
+  .lives{font-size:1.25rem; white-space:nowrap; letter-spacing:1px;}
+
+  /* ---------- Complete screen ---------- */
+  .complete{
+    text-align:center; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:26px 18px; margin:auto 0;
+  }
+  .complete h2{font-size:2rem; color:var(--blue-deep); margin:4px 0 8px;}
+  .stars-big{font-size:3.4rem; letter-spacing:8px; height:1.4em; color:var(--sun);}
+  .stars-big .s{display:inline-block; opacity:.25;}
+  .stars-big .s.on{opacity:1; animation:pop .5s ease both;}
+  .reward-line{font-size:1.3rem; font-weight:800; margin:10px 0 18px;}
+  .complete .btn{margin:6px;}
+
+  /* ---------- FX ---------- */
+  #fx{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50;}
+  .confetti{position:absolute; font-size:1.6rem; animation:confetti-fall linear forwards;}
+
+  /* ---------- Keyframes ---------- */
+  @keyframes bob{0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);}}
+  @keyframes pop{0%{transform:scale(.4);} 70%{transform:scale(1.15);} 100%{transform:scale(1);}}
+  @keyframes wobble{0%,100%{transform:translateX(0);} 20%{transform:translateX(-8px) rotate(-5deg);} 40%{transform:translateX(8px) rotate(5deg);} 60%{transform:translateX(-6px) rotate(-3deg);} 80%{transform:translateX(6px) rotate(3deg);}}
+  @keyframes confetti-fall{from{transform:translateY(-30px) rotate(0);} to{transform:translateY(105vh) rotate(540deg); opacity:.9;}}
+
+  @media (max-width:480px){
+    .disc{min-width:70px; height:70px; font-size:2rem;}
+    .plate.word .disc{width:98px; min-width:98px; height:98px; font-size:1.2rem; padding:0 8px;}
+    .plate .pic{font-size:1.8rem;}
+    .baker .body{width:170px;}   /* catch point adapts automatically */
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ TITLE ============ -->
+  <section class="screen active" id="screen-title">
+    <div class="hero">
+      <div class="logo"><span class="em">🍽️</span> <span data-i18n="title">Falling Plates</span></div>
+      <p class="tagline" data-i18n="tagline">Type the letters to save the plates!</p>
+      <div class="title-plates"><span>🅰️</span><span>🍽️</span><span>🅱️</span><span>🍽️</span><span>🆎</span></div>
+      <div class="title-actions">
+        <button class="btn big" id="play-btn" data-i18n="play">▶ Play</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="icon-btn" id="mute-btn-title" data-i18n-title="sound" title="Sound">🔊</button>
+          <button class="mini-link" id="lang-btn">עברית</button>
+          <button class="mini-link" id="reset-btn" data-i18n="reset">Reset progress</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL SELECT ============ -->
+  <section class="screen" id="screen-select">
+    <div class="select-head">
+      <button class="icon-btn" data-go="title">🏠</button>
+      <div class="level-tag" style="flex:1"><span data-i18n="pickLevel">Pick a Level</span><small data-i18n="pickSub">your typing adventure</small></div>
+      <div class="lang-pill" id="lang-pill-select">🇬🇧 EN</div>
+    </div>
+    <button class="endless-banner" id="endless-challenge">
+      <div class="eb-title">♾️ <span data-i18n="endlessChallenge">Endless Challenge</span></div>
+      <div class="eb-sub"><span data-i18n="challengeSub">It speeds up — 3 misses and you're out!</span> <span id="endless-best"></span></div>
+    </button>
+    <div class="grid-levels" id="levels-grid"></div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="screen-play">
+    <div class="topbar">
+      <button class="icon-btn" data-go="select" data-i18n-title="back" title="Back">⬅️</button>
+      <div class="spacer"></div>
+      <div class="level-tag" id="play-level">Level<small>Letters</small></div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="mute-btn-play" data-i18n-title="sound" title="Sound">🔊</button>
+    </div>
+
+    <div class="progress-row">
+      <div class="saved-count" id="saved-count">🍽️ 0/5</div>
+      <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+      <div class="lives" id="lives" style="display:none">❤️❤️❤️</div>
+    </div>
+
+    <div class="arena" id="arena">
+      <!-- ===== Kitchen scenery (behind the falling plates) ===== -->
+      <div class="kitchen" aria-hidden="true">
+        <div class="wall"></div>
+
+        <div class="item window">
+          <svg viewBox="0 0 168 132">
+            <defs><linearGradient id="winSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#bfe3ff"/><stop offset="1" stop-color="#eaf6ff"/>
+            </linearGradient></defs>
+            <rect x="3" y="3" width="162" height="112" rx="8" fill="#c79a62" stroke="#a9794b" stroke-width="3"/>
+            <rect x="13" y="13" width="142" height="92" rx="3" fill="url(#winSky)"/>
+            <circle cx="132" cy="34" r="13" fill="#ffd166"/>
+            <g fill="#ffffff" opacity=".9"><ellipse cx="46" cy="40" rx="18" ry="9"/><ellipse cx="62" cy="36" rx="13" ry="8"/><ellipse cx="62" cy="76" rx="15" ry="8"/></g>
+            <g stroke="#c79a62" stroke-width="6"><line x1="84" y1="13" x2="84" y2="105"/><line x1="13" y1="59" x2="155" y2="59"/></g>
+            <rect x="0" y="112" width="168" height="15" rx="3" fill="#b9885a"/>
+            <path d="M13 13 q16 26 4 50 q14 -8 14 -50 Z" fill="#ff8fab" opacity=".92"/>
+            <path d="M155 13 q-16 26 -4 50 q-14 -8 -14 -50 Z" fill="#ff8fab" opacity=".92"/>
+          </svg>
+        </div>
+
+        <div class="item shelf">
+          <svg viewBox="0 0 180 78">
+            <rect x="28" y="20" width="30" height="40" rx="6" fill="#ffd9e0" stroke="#f4628a" stroke-width="2"/>
+            <rect x="30" y="13" width="26" height="9" rx="3" fill="#f4628a"/>
+            <rect x="75" y="16" width="30" height="44" rx="6" fill="#fff4d6" stroke="#e7b84d" stroke-width="2"/>
+            <rect x="77" y="9" width="26" height="9" rx="3" fill="#e7b84d"/>
+            <rect x="122" y="22" width="30" height="38" rx="6" fill="#d6f3e4" stroke="#5fbf6a" stroke-width="2"/>
+            <rect x="124" y="15" width="26" height="9" rx="3" fill="#5fbf6a"/>
+            <rect x="6" y="60" width="168" height="10" rx="3" fill="#b9885a"/>
+            <rect x="18" y="70" width="8" height="8" fill="#a9794b"/><rect x="154" y="70" width="8" height="8" fill="#a9794b"/>
+          </svg>
+        </div>
+
+        <div class="item clock">
+          <svg viewBox="0 0 68 68">
+            <circle cx="34" cy="34" r="30" fill="#ffffff" stroke="#7a4a2b" stroke-width="4"/>
+            <circle cx="34" cy="34" r="30" fill="none" stroke="#f4628a" stroke-width="2"/>
+            <g stroke="#2c3e57" stroke-width="3" stroke-linecap="round"><line x1="34" y1="34" x2="34" y2="18"/><line x1="34" y1="34" x2="46" y2="40"/></g>
+            <circle cx="34" cy="34" r="3" fill="#2c3e57"/>
+            <g fill="#2c3e57"><circle cx="34" cy="10" r="1.6"/><circle cx="58" cy="34" r="1.6"/><circle cx="34" cy="58" r="1.6"/><circle cx="10" cy="34" r="1.6"/></g>
+          </svg>
+        </div>
+
+        <div class="item fridge">
+          <svg viewBox="0 0 120 210">
+            <rect x="6" y="4" width="108" height="202" rx="16" fill="#e3eaf0" stroke="#c3ced8" stroke-width="3"/>
+            <line x1="6" y1="74" x2="114" y2="74" stroke="#c3ced8" stroke-width="3"/>
+            <rect x="16" y="20" width="8" height="40" rx="4" fill="#aab6c2"/>
+            <rect x="16" y="92" width="8" height="96" rx="4" fill="#aab6c2"/>
+            <rect x="60" y="104" width="34" height="26" rx="3" fill="#ffffff" stroke="#dfe5eb" stroke-width="2"/>
+            <g stroke="#c9d2db" stroke-width="2"><line x1="65" y1="112" x2="89" y2="112"/><line x1="65" y1="118" x2="89" y2="118"/><line x1="65" y1="124" x2="82" y2="124"/></g>
+            <circle cx="77" cy="101" r="3" fill="#f4628a"/>
+            <rect x="96" y="14" width="9" height="182" rx="4" fill="#ffffff" opacity=".5"/>
+          </svg>
+        </div>
+
+        <div class="item counter">
+          <svg viewBox="0 0 210 120">
+            <rect x="6" y="40" width="198" height="78" rx="8" fill="#cdb08a" stroke="#a9794b" stroke-width="3"/>
+            <line x1="105" y1="46" x2="105" y2="112" stroke="#a9794b" stroke-width="2"/>
+            <circle cx="92" cy="74" r="3" fill="#7a4a2b"/><circle cx="118" cy="74" r="3" fill="#7a4a2b"/>
+            <rect x="0" y="30" width="210" height="14" rx="5" fill="#8a5a36"/>
+            <path d="M30 30 a26 18 0 0 0 52 0 Z" fill="#ffffff" stroke="#d7dee4" stroke-width="2"/>
+            <ellipse cx="56" cy="30" rx="26" ry="6" fill="#eef3f7" stroke="#d7dee4" stroke-width="2"/>
+            <path d="M47 23 q9 -11 18 0" fill="none" stroke="#f4628a" stroke-width="3" stroke-linecap="round"/>
+            <rect x="120" y="18" width="64" height="12" rx="6" fill="#e7c79a" stroke="#c79a62" stroke-width="2"/>
+            <rect x="112" y="21" width="12" height="6" rx="3" fill="#c79a62"/><rect x="180" y="21" width="12" height="6" rx="3" fill="#c79a62"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="hint" id="hint" data-i18n="hint">Type what's on the plate!</div>
+      <div class="baker" id="baker">
+        <span class="sweat">
+          <svg viewBox="0 0 20 28" aria-hidden="true">
+            <path d="M10 1C10 1 2 14 2 19a8 8 0 0 0 16 0C18 14 10 1 10 1Z" fill="#74c2ff"/>
+            <ellipse cx="7.4" cy="18" rx="2.2" ry="3.2" fill="#c6e8ff" opacity=".85"/>
+          </svg>
+        </span>
+        <svg class="body" viewBox="0 0 120 140" role="img" aria-label="Stressed baker">
+          <!-- arms reaching up to catch, drawn behind the body -->
+          <path d="M42 96 Q28 88 23 66" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+          <path d="M78 96 Q92 88 97 66" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+          <circle cx="22" cy="63" r="8.5" fill="#f3c69b" stroke="#e0a877" stroke-width="1.5"/>
+          <circle cx="98" cy="63" r="8.5" fill="#f3c69b" stroke="#e0a877" stroke-width="1.5"/>
+          <!-- jacket -->
+          <rect x="36" y="84" width="48" height="50" rx="15" fill="#ffffff" stroke="#e2e8ee" stroke-width="2"/>
+          <path d="M50 86 L60 100 L70 86 Z" fill="#f4628a"/>
+          <g fill="#d4dde5">
+            <circle cx="53" cy="106" r="2.4"/><circle cx="53" cy="118" r="2.4"/>
+            <circle cx="67" cy="106" r="2.4"/><circle cx="67" cy="118" r="2.4"/>
+          </g>
+          <!-- head -->
+          <circle cx="38" cy="68" r="5" fill="#f3c69b"/>
+          <circle cx="82" cy="68" r="5" fill="#f3c69b"/>
+          <rect x="40" y="50" width="40" height="36" rx="16" fill="#f8d3aa" stroke="#e9bd8e" stroke-width="1.5"/>
+          <circle cx="48" cy="75" r="3.5" fill="#ff9d9d" opacity=".55"/>
+          <circle cx="72" cy="75" r="3.5" fill="#ff9d9d" opacity=".55"/>
+          <ellipse cx="52" cy="66" rx="3" ry="4.2" fill="#3a2e2e"/>
+          <ellipse cx="68" cy="66" rx="3" ry="4.2" fill="#3a2e2e"/>
+          <circle cx="53.2" cy="64.5" r="1" fill="#fff"/>
+          <circle cx="69.2" cy="64.5" r="1" fill="#fff"/>
+          <!-- worried eyebrows (inner ends raised) -->
+          <path d="M45 61 Q50 57 56 57" fill="none" stroke="#7a5230" stroke-width="2" stroke-linecap="round"/>
+          <path d="M64 57 Q70 57 75 61" fill="none" stroke="#7a5230" stroke-width="2" stroke-linecap="round"/>
+          <!-- worried open mouth -->
+          <ellipse cx="60" cy="79" rx="4.5" ry="5.5" fill="#9c4a52"/>
+          <ellipse cx="60" cy="81" rx="2.4" ry="2.4" fill="#d98b94"/>
+          <!-- chef's hat -->
+          <rect x="42" y="40" width="36" height="14" rx="5" fill="#ffffff" stroke="#e2e8ee" stroke-width="2"/>
+          <g fill="#ffffff" stroke="#e2e8ee" stroke-width="2">
+            <circle cx="46" cy="32" r="12"/>
+            <circle cx="60" cy="25" r="14"/>
+            <circle cx="74" cy="32" r="12"/>
+          </g>
+          <rect x="44" y="41" width="32" height="7" fill="#ffffff"/>
+        </svg>
+      </div>
+      <div class="floor"></div>
+    </div>
+
+    <div class="shelf" id="shelf"></div>
+  </section>
+
+  <!-- ============ LEVEL COMPLETE ============ -->
+  <section class="screen" id="screen-complete">
+    <div class="complete">
+      <div style="font-size:3.4rem" id="complete-emoji">🎉</div>
+      <h2 id="complete-title" data-i18n="cleared">Level Cleared!</h2>
+      <div class="stars-big" id="complete-stars"><span class="s">★</span><span class="s">★</span><span class="s">★</span></div>
+      <div class="reward-line" id="complete-reward"></div>
+      <div>
+        <button class="btn green" id="next-btn"></button>
+        <button class="btn" id="endless-btn" data-i18n="endless">♾️ Endless</button>
+        <button class="btn ghost" id="replay-btn" data-i18n="replay">↻ Replay</button>
+        <button class="btn ghost" data-go="select" data-i18n="map">🏠 Map</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div id="fx"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Falling Plates — single-file kids' typing game
+   Plates fall slowly; type the letter/word on each plate to
+   "save" it. Save the target number to clear a level.
+   Tweak LEVELS, ALPHABETS and WORDS below.
+   ========================================================= */
+
+// ----- Level configuration (data-driven, language-independent) -----
+// mode:"letter"  -> each plate shows one random letter from the alphabet.
+// mode:"word"    -> each plate shows a whole word; pool picks the word list.
+// showImage      -> draw the word's emoji "picture" above the plate (word levels).
+// target         -> plates you must save to clear the level (progress to save).
+// fallMs         -> time a plate takes to fall (smaller = faster).
+// spawnGapMs     -> gap between new plates (smaller = busier).
+// maxConcurrent  -> how many plates may fall at once.
+const LEVELS = [
+  // ---- Letters: very slow start, one plate at a time ----
+  {nameKey:"lvl_first",   emoji:"🐣", mode:"letter",                 target:5,  fallMs:15000, spawnGapMs:3500, maxConcurrent:1},
+  {nameKey:"lvl_letters", emoji:"🅰️", mode:"letter",                 target:6,  fallMs:13000, spawnGapMs:3000, maxConcurrent:1},
+  {nameKey:"lvl_drizzle", emoji:"🌦️", mode:"letter",                 target:8,  fallMs:11000, spawnGapMs:2600, maxConcurrent:2},
+  {nameKey:"lvl_shower",  emoji:"🌧️", mode:"letter",                 target:10, fallMs:9000,  spawnGapMs:2200, maxConcurrent:2},
+  {nameKey:"lvl_storm",   emoji:"⛈️", mode:"letter",                 target:12, fallMs:8000,  spawnGapMs:1800, maxConcurrent:3},
+  // ---- Words with a picture ----
+  {nameKey:"lvl_words",   emoji:"📖", mode:"word", pool:"easy", showImage:true,  target:5, fallMs:16000, spawnGapMs:4500, maxConcurrent:1},
+  {nameKey:"lvl_picture", emoji:"🖼️", mode:"word", pool:"easy", showImage:true,  target:6, fallMs:14000, spawnGapMs:4000, maxConcurrent:1},
+  {nameKey:"lvl_noPic",   emoji:"🔤", mode:"word", pool:"easy", showImage:false, target:7, fallMs:12000, spawnGapMs:3500, maxConcurrent:2},
+  {nameKey:"lvl_bigWords",emoji:"📚", mode:"word", pool:"hard", showImage:true,  target:6, fallMs:15000, spawnGapMs:4500, maxConcurrent:1},
+  {nameKey:"lvl_master",  emoji:"🏆", mode:"word", pool:"hard", showImage:false, target:8, fallMs:12000, spawnGapMs:3500, maxConcurrent:2},
+];
+
+// ----- Alphabets (letter levels pick at random from these) -----
+const ALPHABETS = {
+  en: "abcdefghijklmnopqrstuvwxyz".split(""),
+  he: "אבגדהוזחטיכלמנסעפצקרשת".split(""),
+};
+
+// ----- Word pools with an emoji "picture" for each word -----
+// Letters are typed in logical order, so RTL Hebrew works automatically.
+const WORDS = {
+  en:{
+    easy:[
+      {w:"cat",emoji:"🐱"},{w:"dog",emoji:"🐶"},{w:"sun",emoji:"☀️"},{w:"bee",emoji:"🐝"},
+      {w:"cup",emoji:"☕"},{w:"car",emoji:"🚗"},{w:"bus",emoji:"🚌"},{w:"pig",emoji:"🐷"},
+      {w:"cow",emoji:"🐮"},{w:"owl",emoji:"🦉"},{w:"hat",emoji:"🎩"},{w:"key",emoji:"🔑"},
+      {w:"fish",emoji:"🐟"},{w:"frog",emoji:"🐸"},{w:"star",emoji:"⭐"},{w:"cake",emoji:"🍰"},
+      {w:"ball",emoji:"⚽"},{w:"bird",emoji:"🐦"},{w:"tree",emoji:"🌳"},{w:"moon",emoji:"🌙"},
+    ],
+    hard:[
+      {w:"apple",emoji:"🍎"},{w:"train",emoji:"🚆"},{w:"house",emoji:"🏠"},{w:"mouse",emoji:"🐭"},
+      {w:"snake",emoji:"🐍"},{w:"tiger",emoji:"🐯"},{w:"robot",emoji:"🤖"},{w:"sheep",emoji:"🐑"},
+      {w:"flower",emoji:"🌸"},{w:"banana",emoji:"🍌"},{w:"rocket",emoji:"🚀"},{w:"guitar",emoji:"🎸"},
+      {w:"monkey",emoji:"🐵"},{w:"pencil",emoji:"✏️"},{w:"rabbit",emoji:"🐰"},{w:"orange",emoji:"🍊"},
+    ],
+  },
+  he:{
+    easy:[
+      {w:"כלב",emoji:"🐶"},{w:"שמש",emoji:"☀️"},{w:"דג",emoji:"🐟"},{w:"פרה",emoji:"🐮"},
+      {w:"ארי",emoji:"🦁"},{w:"תות",emoji:"🍓"},{w:"עץ",emoji:"🌳"},{w:"יד",emoji:"✋"},
+      {w:"פרח",emoji:"🌸"},{w:"דבש",emoji:"🍯"},{w:"בית",emoji:"🏠"},{w:"דוב",emoji:"🐻"},
+      {w:"נמר",emoji:"🐯"},{w:"פיל",emoji:"🐘"},{w:"סוס",emoji:"🐴"},{w:"עוף",emoji:"🐔"},
+      {w:"חתול",emoji:"🐱"},{w:"גזר",emoji:"🥕"},{w:"כדור",emoji:"⚽"},{w:"ביצה",emoji:"🥚"},
+    ],
+    hard:[
+      {w:"תפוח",emoji:"🍎"},{w:"בננה",emoji:"🍌"},{w:"רכבת",emoji:"🚆"},{w:"עכבר",emoji:"🐭"},
+      {w:"נחש",emoji:"🐍"},{w:"פרפר",emoji:"🦋"},{w:"ירח",emoji:"🌙"},{w:"כוכב",emoji:"⭐"},
+      {w:"גלידה",emoji:"🍦"},{w:"עוגה",emoji:"🍰"},{w:"מטוס",emoji:"✈️"},{w:"אריה",emoji:"🦁"},
+      {w:"ענן",emoji:"☁️"},{w:"שולחן",emoji:"🪑"},{w:"גיטרה",emoji:"🎸"},{w:"חלון",emoji:"🪟"},
+    ],
+  },
+};
+
+// ----- String table (i18n). Add a language by adding another block. -----
+const I18N = {
+  en:{
+    dir:"ltr", langName:"עברית", langPill:"🇬🇧 EN",
+    title:"Falling Plates",
+    tagline:"Type the letters to save the plates!",
+    play:"▶ Play",
+    sound:"Sound",
+    reset:"Reset progress",
+    pickLevel:"Pick a Level",
+    pickSub:"your typing adventure",
+    back:"Back",
+    hint:"Type what's on the plate!",
+    plates:"plates",
+    level:"Level",
+    mode_letters:"Letters",
+    mode_words:"Words",
+    cleared:"Level Cleared!",
+    allDone:"You're a Typing Star! 🏆",
+    saved:"saved",
+    perfect:"Perfect!",
+    oops_one:"1 plate slipped",
+    oops_many:"plates slipped",
+    next:"Next ▶",
+    endless:"♾️ Endless",
+    endlessName:"Endless",
+    endlessChallenge:"Endless Challenge",
+    challengeSub:"It speeds up — 3 misses and you're out!",
+    challengeOver:"Good run!",
+    playAgain:"▶ Play again",
+    best:"Best",
+    replay:"↻ Replay",
+    map:"🏠 Map",
+    resetConfirm:"Start over? This clears all stars in both languages.",
+    resetDone:"Progress reset! 🧹",
+    lvl_first:"First Plates", lvl_letters:"Letter Fun", lvl_drizzle:"Letter Drizzle",
+    lvl_shower:"Letter Shower", lvl_storm:"Letter Storm",
+    lvl_words:"First Words", lvl_picture:"Picture Words", lvl_noPic:"No Peeking",
+    lvl_bigWords:"Big Words", lvl_master:"Word Master",
+  },
+  he:{
+    dir:"rtl", langName:"English", langPill:"🇮🇱 עב",
+    title:"צלחות נופלות",
+    tagline:"הקלידו את האותיות והצילו את הצלחות!",
+    play:"▶ שחקו",
+    sound:"צליל",
+    reset:"איפוס התקדמות",
+    pickLevel:"בחרו שלב",
+    pickSub:"הרפתקת ההקלדה שלך",
+    back:"חזרה",
+    hint:"הקלידו מה שכתוב על הצלחת!",
+    plates:"צלחות",
+    level:"שלב",
+    mode_letters:"אותיות",
+    mode_words:"מילים",
+    cleared:"השלב הושלם!",
+    allDone:"אלופי הקלדה! 🏆",
+    saved:"הצלתם",
+    perfect:"מושלם!",
+    oops_one:"צלחת אחת נפלה",
+    oops_many:"צלחות נפלו",
+    next:"הבא ◀",
+    endless:"♾️ אינסופי",
+    endlessName:"אינסופי",
+    endlessChallenge:"אתגר אינסופי",
+    challengeSub:"המהירות עולה — 3 פספוסים ונגמר!",
+    challengeOver:"כל הכבוד!",
+    playAgain:"▶ עוד פעם",
+    best:"שיא",
+    replay:"שוב ↻",
+    map:"🏠 מפה",
+    resetConfirm:"להתחיל מחדש? כל הכוכבים בשתי השפות יימחקו.",
+    resetDone:"ההתקדמות אופסה! 🧹",
+    lvl_first:"צלחות ראשונות", lvl_letters:"כיף של אותיות", lvl_drizzle:"טפטוף אותיות",
+    lvl_shower:"מקלחת אותיות", lvl_storm:"סופת אותיות",
+    lvl_words:"מילים ראשונות", lvl_picture:"מילים עם תמונה", lvl_noPic:"בלי הצצה",
+    lvl_bigWords:"מילים גדולות", lvl_master:"אלוף המילים",
+  },
+};
+const DEFAULT_LANG = "he";
+
+function t(key){
+  const L = I18N[save.lang] || I18N[DEFAULT_LANG];
+  if(L && L[key]!=null) return L[key];
+  if(I18N.en[key]!=null) return I18N.en[key];
+  return key;
+}
+function mistakesText(m){ return m===0 ? t("perfect") : (m===1 ? t("oops_one") : m+" "+t("oops_many")); }
+
+// =========================================================
+//  Persistent save (progress tracked separately per language)
+// =========================================================
+const SAVE_KEY = "fallingPlates.save";
+const DEFAULT_SAVE = {
+  lang:DEFAULT_LANG, muted:false,
+  progress:{ he:{unlockedLevel:0, starsByLevel:{}, endlessBest:0}, en:{unlockedLevel:0, starsByLevel:{}, endlessBest:0} },
+};
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const s = {...DEFAULT_SAVE, ...parsed};
+    s.progress = {...DEFAULT_SAVE.progress, ...(parsed.progress||{})};
+    for(const lng of ["he","en"]){
+      s.progress[lng] = {unlockedLevel:0, starsByLevel:{}, endlessBest:0, ...(s.progress[lng]||{})};
+    }
+    if(!I18N[s.lang]) s.lang = DEFAULT_LANG;
+    return s;
+  }catch(e){ return JSON.parse(JSON.stringify(DEFAULT_SAVE)); }
+}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+let save = loadSave();
+function prog(){ return save.progress[save.lang]; }   // progress for the current language
+
+// =========================================================
+//  Helpers
+// =========================================================
+const $ = sel => document.querySelector(sel);
+const randInt = (lo,hi) => lo + Math.floor(Math.random()*(hi-lo+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+
+// =========================================================
+//  Sound (tiny Web Audio jingles — no files)
+// =========================================================
+let audioCtx = null;
+function beep(freq, start, dur, type="sine", gain=0.15){
+  if(save.muted) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime + start;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(gain, t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0+dur);
+  }catch(e){}
+}
+// short filtered-noise burst — the "crash" of breaking ceramic
+function noiseBurst(dur=0.2, gain=0.16, hp=1100){
+  if(save.muted) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime;
+    const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate*dur), audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 2); }
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const filt = audioCtx.createBiquadFilter(); filt.type="highpass"; filt.frequency.value = hp;
+    const g = audioCtx.createGain(); g.gain.value = gain;
+    src.connect(filt); filt.connect(g); g.connect(audioCtx.destination);
+    src.start(t0);
+  }catch(e){}
+}
+function playSound(type){
+  if(type==="save"){ beep(660,0,.13,"triangle"); beep(990,.1,.2,"triangle"); }
+  else if(type==="type"){ beep(740,0,.05,"square",.07); }
+  else if(type==="wrong"){ beep(180,0,.14,"sawtooth",.08); }
+  else if(type==="smash"){ noiseBurst(.22,.17,1100); beep(2100,0,.05,"square",.05); beep(1500,.05,.07,"triangle",.05); beep(700,.02,.13,"sine",.09); }
+  else if(type==="level"){ [523,659,784,1046].forEach((f,i)=>beep(f,i*.12,.25,"triangle")); }
+  else if(type==="tap"){ beep(440,0,.05,"square",.06); }
+}
+
+// =========================================================
+//  Screen navigation
+// =========================================================
+let currentScreen = "title";
+function showScreen(name){
+  if(name!=="play") stopGame();   // leaving play tears the game down
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("#screen-"+name).classList.add("active");
+  currentScreen = name;
+  if(name==="select") renderSelect();
+}
+
+// =========================================================
+//  Level select
+// =========================================================
+function renderSelect(){
+  $("#lang-pill-select").textContent = t("langPill");
+  const grid = $("#levels-grid");
+  grid.innerHTML = "";
+  const p = prog();
+  $("#endless-best").textContent = (p.endlessBest>0) ? `🏆 ${t("best")}: ${p.endlessBest}` : "";
+  LEVELS.forEach((lv,i)=>{
+    const locked = i > p.unlockedLevel;
+    const stars = p.starsByLevel[i]||0;
+    const modeLabel = lv.mode==="word" ? t("mode_words") : t("mode_letters");
+    const card = document.createElement("div");
+    card.className = "level-card"+(locked?" locked":"");
+    card.innerHTML = `
+      <div class="lc-emoji">${locked?"🔒":lv.emoji}</div>
+      <div class="lc-name">${t(lv.nameKey)}</div>
+      <div class="lc-sub">${modeLabel} • ${lv.target} ${t("plates")}</div>
+      <div class="lc-stars">${starString(stars)}</div>`;
+    if(!locked) card.addEventListener("click",()=>startLevel(i));
+    grid.appendChild(card);
+  });
+}
+function starString(n){ return "★★★".slice(0,n).padEnd(3,"☆"); }
+
+// =========================================================
+//  Game state + loop
+// =========================================================
+const game = {
+  levelIndex:0,
+  saved:0,
+  misses:0,
+  plates:[],        // live (falling, typeable) plate objects
+  catching:[],      // plates already typed, dropping into the baker's hands
+  focusId:null,     // word-mode: the plate currently being typed
+  nextId:1,
+  lastSpawn:0,
+  lastTs:0,
+  rafId:null,
+  running:false,
+  completed:false,
+  endless:false,    // per-level endless: keep this level's difficulty going forever
+  challenge:false,  // Endless Challenge: difficulty ramps up; 3 misses ends the run
+};
+
+// The stressed baker who paces the floor and dashes under caught plates.
+// Speeds are in % of arena width per millisecond.
+const baker = { x:50, wanderX:50, wanderTimer:0, wanderSpeed:0.04, catchSpeed:0.22, fallSpeed:0.9, w:0, h:0 };
+const BAKER_BOTTOM = 30;        // must match `.baker { bottom }` in the CSS (px)
+const BAKER_HAND_RATIO = 0.45;  // his hands sit ~45% down from the top of the artwork
+
+// Start a normal level (optionally that level's own constant-speed endless).
+function startLevel(i, endless=false){ beginRun({index:i, endless}); }
+// Start the ramping Endless Challenge from the map (3 misses ends it).
+function startChallenge(){ beginRun({index:0, challenge:true}); }
+
+function beginRun({index, endless=false, challenge=false}){
+  game.levelIndex = index;
+  game.challenge = !!challenge;
+  game.endless = !!endless && !challenge;
+  game.saved = 0;
+  game.misses = 0;
+  game.plates = [];
+  game.catching = [];
+  game.focusId = null;
+  game.nextId = 1;
+  game.lastSpawn = -Infinity;   // spawn the first plate right away
+  game.completed = false;
+
+  // reset the baker to the middle, calmly pacing
+  baker.x = 50; baker.wanderX = 50; baker.wanderTimer = 0;
+  const bakerEl = $("#baker");
+  bakerEl.style.left = "50%";
+  bakerEl.classList.remove("catching");
+
+  const lv = LEVELS[index];
+  let title, small;
+  if(challenge){
+    title = "♾️ " + t("endlessChallenge");
+    small = t("endlessName");
+  }else{
+    const modeLabel = lv.mode==="word" ? t("mode_words") : t("mode_letters");
+    title = `${endless?"♾️ ":""}${t(lv.nameKey)}`;
+    small = endless ? t("endlessName") : modeLabel;
+  }
+  $("#play-level").innerHTML = `${title}<small>${small}</small>`;
+  $("#hint").textContent = challenge ? t("challengeSub") : t("hint");
+  $("#hint").style.display = "";
+  $("#lives").style.display = challenge ? "" : "none";
+  $("#arena").querySelectorAll(".plate").forEach(el=>el.remove());
+  $("#shelf").innerHTML = "";
+  updateProgressUI();
+
+  showScreen("play");
+  // measure the baker now that it's laid out (drives the catch point + borders)
+  baker.w = bakerEl.offsetWidth;
+  baker.h = bakerEl.offsetHeight;
+  // run the loop
+  game.running = true;
+  game.lastTs = performance.now();
+  game.rafId = requestAnimationFrame(loop);
+}
+
+// ----- Endless Challenge ramp (gets harder the more you've saved) -----
+// Returns the live falling-config for the current score.
+function challengeRamp(){
+  const s = game.saved;
+  return {
+    fallMs: Math.max(4000, 13000 - s*400),       // plates fall faster over time
+    spawnGapMs: Math.max(950, 2800 - s*110),      // and arrive more often
+    maxConcurrent: s<5 ? 1 : s<12 ? 2 : s<22 ? 3 : 4,
+    target: Infinity,
+  };
+}
+// Picks what a single Challenge plate shows (letters first, words creep in later).
+function challengeSpawnSpec(){
+  const s = game.saved;
+  let mode="letter", pool=null, showImage=false;
+  if(s>=8){
+    const wordChance = Math.min(0.6, (s-8)*0.04);
+    if(Math.random() < wordChance){
+      mode="word";
+      pool = (s>=20 && Math.random()<0.5) ? "hard" : "easy";
+      showImage = s<14;   // show the picture early, then hide it
+    }
+  }
+  return {mode, pool, showImage};
+}
+
+function stopGame(){
+  game.running = false;
+  if(game.rafId){ cancelAnimationFrame(game.rafId); game.rafId = null; }
+  game.plates.forEach(p=>p.el.remove());
+  game.catching.forEach(c=>c.el.remove());
+  game.plates = [];
+  game.catching = [];
+  game.focusId = null;
+  const b = $("#baker"); if(b) b.classList.remove("catching");
+}
+
+function loop(ts){
+  if(!game.running) return;
+  const dt = Math.min(50, ts - game.lastTs);   // clamp (e.g. after tab was hidden)
+  game.lastTs = ts;
+  update(dt, ts);
+  game.rafId = requestAnimationFrame(loop);
+}
+
+function update(dt, ts){
+  // In the Endless Challenge the config is computed live (it ramps with the score).
+  const lv = game.challenge ? challengeRamp() : LEVELS[game.levelIndex];
+  const arena = $("#arena");
+  const arenaH = arena.clientHeight;
+  const floorTop = arenaH - 46;   // top of the wooden floor strip
+  // where a caught plate rests in the baker's hands (derived from his real size)
+  const handsTop = baker.h ? (arenaH - BAKER_BOTTOM - baker.h*(1-BAKER_HAND_RATIO)) : (floorTop - 24);
+
+  // spawn new plates while we still need more saves (count caught plates as "busy")
+  const busy = game.plates.length + game.catching.length;
+  const needMore = game.endless || game.challenge || (game.saved + game.catching.length < lv.target);
+  if(needMore &&
+     busy < lv.maxConcurrent &&
+     ts - game.lastSpawn >= lv.spawnGapMs){
+    spawnPlate(game.challenge ? {...lv, ...challengeSpawnSpec()} : lv);
+    game.lastSpawn = ts;
+  }
+
+  // move falling plates; smash any that reach the floor untyped
+  for(const p of game.plates.slice()){
+    p.y += p.speed * dt;
+    p.el.style.top = p.y + "px";
+    const h = p.el.offsetHeight || 90;
+    if(p.y + h >= floorTop){ smashPlate(p); }
+  }
+
+  // drop caught plates into the baker's hands
+  for(const c of game.catching.slice()){
+    const targetTop = handsTop - c.h;
+    c.y = Math.min(targetTop, c.y + baker.fallSpeed * dt);
+    c.el.style.top = c.y + "px";
+    if(c.y >= targetTop){
+      c.wait += dt;
+      // land once the baker is underneath (or has had a moment to get there)
+      if(Math.abs(baker.x - c.x) < 5 || c.wait > 500){ finalizeCatch(c); }
+    }
+  }
+
+  moveBaker(dt);
+}
+
+// The baker dashes under the newest caught plate, otherwise paces nervously.
+function moveBaker(dt){
+  const bakerEl = $("#baker");
+  // keep his whole body on screen: margin = half his width, as a % of the arena
+  const arenaW = bakerEl.parentElement.clientWidth || 600;
+  const m = Math.min(42, (baker.w/2)/arenaW*100 + 1);
+
+  let targetX, speed;
+  if(game.catching.length){
+    targetX = game.catching[game.catching.length-1].x;
+    speed = baker.catchSpeed;
+    bakerEl.classList.add("catching");
+  }else{
+    baker.wanderTimer -= dt;
+    if(baker.wanderTimer <= 0){ baker.wanderX = randInt(Math.ceil(m), Math.floor(100-m)); baker.wanderTimer = randInt(600,1500); }
+    targetX = baker.wanderX;
+    speed = baker.wanderSpeed;
+    bakerEl.classList.remove("catching");
+  }
+  const dx = targetX - baker.x;
+  const step = speed * dt;
+  baker.x = Math.abs(dx) <= step ? targetX : baker.x + Math.sign(dx)*step;
+  baker.x = Math.max(m, Math.min(100-m, baker.x));   // clamp to the borders
+  bakerEl.style.left = baker.x + "%";
+}
+
+function spawnPlate(lv){
+  const id = game.nextId++;
+  let text, emoji=null;
+  const live = game.plates.map(p=>p.text);
+  if(lv.mode==="letter"){
+    const pool = ALPHABETS[save.lang].filter(c=>!live.includes(c));
+    text = pick(pool.length?pool:ALPHABETS[save.lang]);
+  }else{
+    const words = WORDS[save.lang][lv.pool];
+    const pool = words.filter(o=>!live.includes(o.w));
+    const obj = pick(pool.length?pool:words);
+    text = obj.w; emoji = obj.emoji;
+  }
+
+  const el = document.createElement("div");
+  el.className = "plate" + (lv.mode==="word" ? " word" : "");
+  let inner = "";
+  if(lv.showImage && emoji) inner += `<div class="pic">${emoji}</div>`;
+  if(lv.mode==="word"){
+    const chars = [...text].map(c=>`<span class="ch">${c}</span>`).join("");
+    inner += `<div class="disc">${chars}</div>`;
+  }else{
+    inner += `<div class="disc">${text}</div>`;
+  }
+  el.innerHTML = inner;
+
+  // horizontal position: pick a lane away from other live plates
+  let x = 50;
+  for(let tries=0; tries<8; tries++){
+    const cand = randInt(15, 85);
+    if(game.plates.every(p=>Math.abs(p.x-cand) > 24)){ x = cand; break; }
+    x = cand;
+  }
+  el.style.left = x + "%";
+  el.style.top = "-90px";
+
+  const arena = $("#arena");
+  arena.appendChild(el);
+
+  const h = el.offsetHeight || 90;
+  const distance = (arena.clientHeight - 46) + h;   // from above the top to the floor
+  const plate = {id, el, text, emoji, x, y:-h, typedIndex:0, mode:lv.mode, speed:distance/lv.fallMs};
+  game.plates.push(plate);
+}
+
+function removePlate(p){
+  const idx = game.plates.indexOf(p);
+  if(idx>=0) game.plates.splice(idx,1);
+  if(game.focusId===p.id) game.focusId = null;
+}
+
+function lowestPlate(){
+  let best=null;
+  for(const p of game.plates){ if(!best || p.y>best.y) best=p; }
+  return best;
+}
+
+// =========================================================
+//  Typing input (physical keyboard)
+// =========================================================
+function normKey(k){ return save.lang==="en" ? k.toLowerCase() : k; }
+
+function onKey(e){
+  if(currentScreen!=="play" || !game.running) return;
+  const k = e.key;
+  if(k.length!==1 || k===" ") return;          // ignore Shift/Enter/space/etc.
+  const key = normKey(k);
+
+  // Endless Challenge mixes single letters and words, so use one unified matcher.
+  if(game.challenge){ handleTypeUnified(key); return; }
+
+  const lv = LEVELS[game.levelIndex];
+
+  if(lv.mode==="letter"){
+    // save the lowest plate that shows this letter
+    let target=null;
+    for(const p of game.plates){ if(p.text===key && (!target || p.y>target.y)) target=p; }
+    if(target){ savePlate(target); }
+    else { playSound("wrong"); }
+    return;
+  }
+
+  // word mode: keep typing the focused plate (or grab the lowest one)
+  let p = game.plates.find(pl=>pl.id===game.focusId) || lowestPlate();
+  if(!p) return;
+  const expected = p.text[p.typedIndex];
+  if(key===expected){
+    p.typedIndex++;
+    game.focusId = p.id;
+    refreshFocus();
+    if(p.typedIndex >= p.text.length){ savePlate(p); }
+    else { playSound("type"); }
+  }else{
+    playSound("wrong");
+    p.el.classList.add("wobble");
+    setTimeout(()=>p.el.classList.remove("wobble"), 400);
+  }
+}
+
+// Unified typing: continue a word in progress, else start the lowest plate whose
+// next character matches. Single letters are just 1-character "words".
+function handleTypeUnified(key){
+  let p = game.plates.find(pl => pl.id===game.focusId && pl.typedIndex>0);
+  if(!p){
+    let best=null;
+    for(const pl of game.plates){
+      if(pl.text[pl.typedIndex]===key && (!best || pl.y>best.y)) best=pl;
+    }
+    p = best;
+  }
+  if(!p){ playSound("wrong"); return; }
+  const expected = p.text[p.typedIndex];
+  if(key===expected){
+    p.typedIndex++;
+    game.focusId = p.id;
+    refreshFocus();
+    if(p.typedIndex >= p.text.length){ savePlate(p); }
+    else { playSound("type"); }
+  }else{
+    playSound("wrong");
+    p.el.classList.add("wobble");
+    setTimeout(()=>p.el.classList.remove("wobble"), 400);
+  }
+}
+
+function refreshFocus(){
+  for(const p of game.plates){
+    p.el.classList.toggle("focus", p.id===game.focusId);
+    // highlight typed characters
+    const chars = p.el.querySelectorAll(".ch");
+    chars.forEach((c,i)=> c.classList.toggle("done", i < p.typedIndex));
+  }
+}
+
+// =========================================================
+//  Saving / smashing plates
+// =========================================================
+// Correct! Hand the plate off to the baker: it stops falling and drops into his hands.
+function savePlate(p){
+  removePlate(p);                         // out of the falling/typeable set
+  p.el.classList.remove("focus");
+  const h = p.el.offsetHeight || 90;
+  game.catching.push({el:p.el, x:p.x, y:p.y, h, wait:0});
+  $("#baker").classList.add("catching");
+  playSound("type");                      // confirm chirp; happy chime plays on landing
+  $("#hint").style.display = "none";
+}
+
+// The plate has settled into the baker's hands — count it.
+function finalizeCatch(c){
+  const idx = game.catching.indexOf(c);
+  if(idx < 0) return;                     // already finalized
+  game.catching.splice(idx, 1);
+  c.el.classList.add("save");
+  setTimeout(()=>c.el.remove(), 320);
+  playSound("save");
+  game.saved++;
+  addShelf();
+  updateProgressUI();
+  if(game.catching.length === 0) $("#baker").classList.remove("catching");
+  if(game.endless || game.challenge){
+    if(game.saved % 10 === 0){ playSound("level"); confetti(); }   // little cheer every 10
+  }else if(game.saved >= LEVELS[game.levelIndex].target){ completeLevel(); }
+}
+
+// A plate hit the floor untyped — break it into pieces and remove it.
+function smashPlate(p){
+  removePlate(p);
+  const el = p.el;
+  el.classList.add("breaking");                 // fade the disc/picture; shards take over
+  const disc = el.querySelector(".disc");
+  if(disc){
+    disc.style.position = "relative";
+    const n = 7;
+    for(let i=0;i<n;i++){
+      const sh = document.createElement("div");
+      sh.className = "shard s"+(i%3);
+      const ang = (-90 + randInt(-75,75)) * Math.PI/180;   // fling outward/up...
+      const dist = randInt(34,72);
+      sh.style.setProperty("--dx", Math.round(Math.cos(ang)*dist) + "px");
+      sh.style.setProperty("--dy", Math.round(Math.sin(ang)*dist + randInt(24,54)) + "px"); // ...then gravity
+      sh.style.setProperty("--rot", randInt(-220,220) + "deg");
+      disc.appendChild(sh);
+    }
+  }
+  setTimeout(()=>el.remove(), 680);
+  playSound("smash");
+  game.misses++;
+  if(game.challenge){
+    updateProgressUI();                       // refresh the hearts
+    if(game.misses >= 3){ challengeGameOver(); }
+  }
+}
+
+function addShelf(){
+  const shelf = $("#shelf");
+  const s = document.createElement("span");
+  s.className = "s";
+  s.textContent = "🍽️";
+  shelf.appendChild(s);
+  while(shelf.children.length > 40) shelf.removeChild(shelf.firstChild);   // endless: cap the row
+}
+
+function updateProgressUI(){
+  const lv = LEVELS[game.levelIndex];
+  if(game.challenge){
+    $("#saved-count").textContent = `🍽️ ${game.saved}`;
+    $("#bar-fill").style.width = (game.saved%10)/10*100 + "%";
+    const lives = Math.max(0, 3 - game.misses);
+    $("#lives").textContent = "❤️".repeat(lives) + "🤍".repeat(3-lives);
+  }else if(game.endless){
+    $("#saved-count").textContent = `🍽️ ${game.saved}`;
+    $("#bar-fill").style.width = (game.saved%10)/10*100 + "%";   // fills toward each cheer
+  }else{
+    $("#saved-count").textContent = `🍽️ ${game.saved}/${lv.target}`;
+    $("#bar-fill").style.width = Math.min(100, game.saved/lv.target*100) + "%";
+  }
+}
+
+// =========================================================
+//  Level complete
+// =========================================================
+function completeLevel(){
+  if(game.completed) return;
+  game.completed = true;
+  const i = game.levelIndex;
+  const m = game.misses;
+  const stars = m===0 ? 3 : (m<=2 ? 2 : 1);
+
+  const p = prog();
+  p.starsByLevel[i] = Math.max(p.starsByLevel[i]||0, stars);
+  if(i+1 <= LEVELS.length-1) p.unlockedLevel = Math.max(p.unlockedLevel, i+1);
+  persist();
+
+  // let the final save animation play, then show the screen
+  setTimeout(()=>{
+    stopGame();
+    // restore the normal complete layout (the Challenge game-over reuses this screen)
+    $("#complete-emoji").textContent = "🎉";
+    $("#complete-stars").innerHTML = '<span class="s">★</span><span class="s">★</span><span class="s">★</span>';
+    $("#endless-btn").style.display = "";
+    $("#replay-btn").style.display = "";
+    const isLast = i >= LEVELS.length-1;
+    $("#complete-title").textContent = isLast ? t("allDone") : t("cleared");
+    $("#complete-reward").textContent = `🍽️ ${game.saved} ${t("saved")}  •  ${mistakesText(m)}`;
+
+    const starEls = document.querySelectorAll("#complete-stars .s");
+    starEls.forEach(s=>s.classList.remove("on"));
+    showScreen("complete");
+    starEls.forEach((s,idx)=>{
+      setTimeout(()=>{ if(idx<stars){ s.classList.add("on"); playSound("tap"); } }, 300+idx*250);
+    });
+
+    const nextBtn = $("#next-btn");
+    if(isLast){ nextBtn.textContent = t("map"); nextBtn.onclick = ()=>showScreen("select"); }
+    else { nextBtn.textContent = t("next"); nextBtn.onclick = ()=>startLevel(i+1); }
+    $("#endless-btn").onclick = ()=>startLevel(i, true);
+    $("#replay-btn").onclick = ()=>startLevel(i);
+
+    playSound("level");
+    confetti();
+  }, 480);
+}
+
+// Endless Challenge ended (3 plates missed) — show the score on the complete screen.
+function challengeGameOver(){
+  if(game.completed) return;
+  game.completed = true;
+  const score = game.saved;
+  const p = prog();
+  const prevBest = p.endlessBest || 0;
+  const isRecord = score > prevBest;
+  const best = Math.max(prevBest, score);
+  p.endlessBest = best;
+  persist();
+
+  setTimeout(()=>{
+    stopGame();
+    $("#complete-emoji").textContent = score>0 ? "💪" : "😅";
+    $("#complete-title").textContent = t("challengeOver");
+    $("#complete-stars").innerHTML = `🍽️ ${score}`;
+    $("#complete-reward").textContent = `${t("best")}: ${best}` + (isRecord ? " 🏆" : "");
+    showScreen("complete");
+
+    const nextBtn = $("#next-btn");
+    nextBtn.textContent = t("playAgain");
+    nextBtn.onclick = ()=>startChallenge();
+    $("#endless-btn").style.display = "none";   // not relevant to the challenge
+    $("#replay-btn").style.display = "none";
+
+    if(score>0){ playSound("level"); confetti(); }
+    else playSound("smash");
+  }, 480);
+}
+
+// =========================================================
+//  Visual FX
+// =========================================================
+function confetti(){
+  const fx = $("#fx");
+  const emojis = ["🎉","✨","⭐","🍽️","🎊","🥳"];
+  for(let i=0;i<40;i++){
+    const c = document.createElement("div");
+    c.className="confetti";
+    c.textContent = pick(emojis);
+    c.style.left = Math.random()*100+"vw";
+    c.style.animationDuration = (1.6+Math.random()*1.6)+"s";
+    c.style.animationDelay = (Math.random()*0.5)+"s";
+    fx.appendChild(c);
+    setTimeout(()=>c.remove(), 3600);
+  }
+}
+
+// =========================================================
+//  Mute + language + wiring
+// =========================================================
+function refreshMute(){
+  const icon = save.muted ? "🔇" : "🔊";
+  $("#mute-btn-title").textContent = icon;
+  $("#mute-btn-play").textContent = icon;
+}
+function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(!save.muted) playSound("tap"); }
+
+function applyLanguage(){
+  if(!I18N[save.lang]) save.lang = DEFAULT_LANG;
+  const L = I18N[save.lang];
+  document.documentElement.lang = save.lang;
+  document.documentElement.dir = L.dir;
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el=>{ el.title = t(el.dataset.i18nTitle); });
+  $("#lang-btn").textContent = L.langName;   // shows the OTHER language to switch to
+  if(currentScreen==="select") renderSelect();
+}
+function toggleLanguage(){ save.lang = (save.lang==="he"?"en":"he"); persist(); applyLanguage(); playSound("tap"); }
+
+document.addEventListener("click", e=>{
+  const go = e.target.closest("[data-go]");
+  if(go) showScreen(go.getAttribute("data-go"));
+});
+document.addEventListener("keydown", onKey);
+window.addEventListener("blur", ()=>{ game.lastTs = performance.now(); });   // avoid a jump after refocus
+
+$("#play-btn").addEventListener("click", ()=>{ playSound("tap"); showScreen("select"); });
+$("#endless-challenge").addEventListener("click", ()=>{ playSound("tap"); startChallenge(); });
+$("#mute-btn-title").addEventListener("click", toggleMute);
+$("#mute-btn-play").addEventListener("click", toggleMute);
+$("#lang-btn").addEventListener("click", toggleLanguage);
+$("#reset-btn").addEventListener("click", ()=>{
+  if(confirm(t("resetConfirm"))){
+    const lang = save.lang;
+    save = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+    save.lang = lang;
+    persist(); refreshMute(); applyLanguage();
+    alert(t("resetDone"));
+  }
+});
+
+// init
+refreshMute();
+applyLanguage();
+</script>
+</body>
+</html>

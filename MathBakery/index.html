@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>מאפיית החשבון 🧁 — חשבון כיף לילדים</title>
+<style>
+  /* ---------- Theme ---------- */
+  :root{
+    --cream:#fff6e9;
+    --cream-2:#ffe9c9;
+    --brown:#7a4a2b;
+    --brown-soft:#a9744b;
+    --pink:#ff8fab;
+    --pink-deep:#f4628a;
+    --mint:#8fe3c0;
+    --sky:#bfe3ff;
+    --sun:#ffd166;
+    --good:#5fbf6a;
+    --shadow:0 6px 0 rgba(0,0,0,.12), 0 12px 24px rgba(0,0,0,.12);
+    --radius:22px;
+    font-size:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Comic Sans MS","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+    color:var(--brown);
+    background:
+      radial-gradient(circle at 15% 10%, #fff 0 8%, transparent 9%),
+      radial-gradient(circle at 85% 20%, #fff 0 6%, transparent 7%),
+      linear-gradient(160deg, var(--sky), var(--cream) 45%, var(--cream-2));
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+  }
+  #app{
+    max-width:780px;
+    margin:0 auto;
+    min-height:100%;
+    padding:14px 16px 28px;
+    position:relative;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen{display:none; animation:fade .35s ease both;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:inherit; font-weight:800; cursor:pointer; border:none;
+    background:var(--pink); color:#fff; border-radius:var(--radius);
+    padding:16px 26px; font-size:1.25rem; box-shadow:var(--shadow);
+    transition:transform .08s ease, filter .15s ease;
+    text-shadow:0 2px 0 rgba(0,0,0,.12);
+  }
+  .btn:active{transform:translateY(3px);}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.big{font-size:1.7rem; padding:20px 44px;}
+  .btn.ghost{background:#fff; color:var(--brown); box-shadow:0 4px 0 rgba(0,0,0,.1);}
+  .btn.green{background:var(--good);}
+  .icon-btn{
+    background:#fff; border:none; border-radius:50%; width:48px; height:48px;
+    font-size:1.4rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.1);
+  }
+  .icon-btn:active{transform:translateY(2px);}
+
+  /* ---------- Title screen ---------- */
+  .hero{text-align:center; padding:18px 6px 6px;}
+  .logo{
+    font-size:clamp(2.6rem,9vw,4.2rem); font-weight:900; line-height:1.05;
+    color:var(--pink-deep); text-shadow:0 4px 0 #fff, 0 6px 0 rgba(0,0,0,.12);
+    margin:6px 0 2px;
+  }
+  .logo .em{display:inline-block; animation:bob 2.2s ease-in-out infinite;}
+  .tagline{font-size:1.15rem; color:var(--brown-soft); margin:0 0 16px;}
+  .baker{font-size:5.5rem; display:inline-block; animation:bob 2.6s ease-in-out infinite;}
+  .title-treats{font-size:2rem; letter-spacing:6px; margin:6px 0 18px; opacity:.9;}
+  .title-actions{display:flex; flex-direction:column; align-items:center; gap:12px;}
+  .mini-link{background:none; border:none; color:var(--brown-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .topbar .spacer{flex:1;}
+  .coins{
+    background:#fff; border-radius:999px; padding:8px 16px; font-weight:900;
+    box-shadow:0 4px 0 rgba(0,0,0,.1); font-size:1.15rem; white-space:nowrap;
+  }
+  .level-tag{font-weight:900; font-size:1.05rem; text-align:center; line-height:1.1;}
+  .level-tag small{display:block; font-weight:700; color:var(--brown-soft); font-size:.8rem;}
+
+  /* ---------- Progress + timer ---------- */
+  .progress-row{display:flex; align-items:center; gap:12px; margin:6px 2px 14px;}
+  .order-count{font-weight:800; white-space:nowrap;}
+  .timer{
+    flex:1; height:18px; background:#fff; border-radius:999px; overflow:hidden;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.12);
+  }
+  .timer-fill{
+    height:100%; width:100%;
+    background:linear-gradient(90deg, var(--good), var(--sun));
+    border-radius:999px; transition:width .1s linear;
+  }
+
+  /* ---------- Customer + bubble ---------- */
+  .stage{
+    background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:16px 16px 20px; position:relative; overflow:hidden;
+  }
+  .counter{
+    position:absolute; left:0; right:0; bottom:0; height:42px;
+    background:repeating-linear-gradient(45deg, var(--cream-2) 0 14px, #ffdfb0 14px 28px);
+    border-top:5px solid var(--brown-soft);
+  }
+  .customer-row{display:flex; align-items:flex-start; gap:12px; min-height:120px;}
+  .customer{font-size:4.6rem; line-height:1; animation:slideIn .5s ease both;}
+  .customer.hop{animation:hop .5s ease;}
+  .bubble{
+    position:relative; background:var(--cream); border:3px solid var(--cream-2);
+    border-radius:18px; padding:12px 16px; font-size:1.2rem; font-weight:800;
+    max-width:70%;
+  }
+  /* tail points toward the customer; flips with text direction */
+  .bubble:after{
+    content:""; position:absolute; left:-14px; top:26px; border:8px solid transparent;
+    border-right-color:var(--cream-2);
+  }
+  [dir="rtl"] .bubble:after{
+    left:auto; right:-14px; border-right-color:transparent; border-left-color:var(--cream-2);
+  }
+  /* keep the math (e.g. 5 + 1) reading left-to-right inside Hebrew text */
+  .bubble b{color:var(--pink-deep); unicode-bidi:isolate;}
+
+  /* ---------- Tray / math visual ---------- */
+  .tray{
+    margin:14px auto 6px; position:relative; z-index:2;
+    display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px 10px;
+    min-height:70px;
+  }
+  .treat{font-size:2.1rem; display:inline-block; transition:transform .2s ease, filter .2s ease, opacity .2s;}
+  /* logical grouping of one pile (an addend, or the minuend) — no box of its own;
+     only a real box of 10 (.ten-box) is ever framed, so small counts read as loose treats */
+  .group{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; align-items:center;}
+  .op-sign{font-size:2rem; font-weight:900; color:var(--brown); margin:0 4px;}
+  /* a "box of 10" ten-frame: 5 across, 2 down — makes numbers to 20 readable */
+  .ten-box{display:grid; grid-template-columns:repeat(5,1fr); gap:2px 4px; padding:5px 7px;
+    background:rgba(255,255,255,.7); border:2px dashed var(--brown-soft); border-radius:14px;}
+  /* loose treats (a pile under 10, no box) stay on one horizontal line — batching looks odd */
+  .loose{display:flex; flex-wrap:nowrap; gap:3px; justify-content:center; align-items:center;}
+  .ten-box .treat, .loose .treat{font-size:1.7rem;}
+  /* empty cell of a partly-filled box of 10 */
+  .slot{display:inline-block; width:1.6rem; height:1.6rem; border-radius:50%;
+    border:2px dashed rgba(122,74,43,.28); vertical-align:middle;}
+  .treat.dough{filter:grayscale(.7) brightness(1.15); opacity:.55;}
+  .treat.eaten{opacity:.3; filter:grayscale(1);}
+  .eaten-wrap{position:relative; display:inline-block;}
+  .eaten-wrap .x{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; color:var(--pink-deep); font-weight:900; pointer-events:none;}
+  .grid{display:grid; gap:6px; justify-content:center; padding:8px; background:rgba(255,209,102,.25); border-radius:16px;}
+  .tray.baked .treat{filter:none; opacity:1; animation:pop .35s ease both;}
+  .tray.baked .treat.eaten{opacity:.25; filter:grayscale(1);}
+
+  /* ---------- Answer choices ---------- */
+  .choices{display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin:18px 4px 4px;}
+  .choice{
+    position:relative; cursor:pointer; border:none; font-family:inherit;
+    width:104px; height:104px; border-radius:26px; font-size:2.4rem; font-weight:900;
+    color:var(--brown);
+    background:radial-gradient(circle at 35% 30%, #ffe4b5, #d98e54);
+    box-shadow:var(--shadow);
+    transition:transform .08s ease, filter .15s;
+  }
+  .choice:before{content:"🍪"; position:absolute; inset:0; font-size:5.4rem; opacity:.18; display:flex; align-items:center; justify-content:center;}
+  .choice span{position:relative; z-index:2; text-shadow:0 2px 0 rgba(255,255,255,.5);}
+  .choice:active{transform:translateY(3px);}
+  .choice:hover{filter:brightness(1.05);}
+  .choice.wrong{animation:wobble .45s ease;}
+  .choice.dim{opacity:.45; filter:grayscale(.5); pointer-events:none;}
+  .choice.correct{animation:pop .4s ease; background:radial-gradient(circle at 35% 30%, #bff0c4, #5fbf6a); color:#fff;}
+
+  /* ---------- Level select ---------- */
+  .select-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .grid-levels{display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:14px;}
+  .level-card{
+    background:#fff; border-radius:20px; box-shadow:var(--shadow); padding:14px 10px;
+    text-align:center; cursor:pointer; border:3px solid transparent; transition:transform .1s;
+  }
+  .level-card:active{transform:translateY(2px);}
+  .level-card .lc-emoji{font-size:2.6rem;}
+  .level-card .lc-name{font-weight:900; margin:4px 0 2px;}
+  .level-card .lc-world{font-size:.78rem; color:var(--brown-soft); min-height:1.6em;}
+  .level-card .lc-stars{font-size:1.1rem; letter-spacing:2px; margin-top:6px;}
+  .level-card.locked{opacity:.55; cursor:not-allowed; background:#f3ece1;}
+  .level-card.locked .lc-emoji{filter:grayscale(1);}
+  .world-label{grid-column:1/-1; font-weight:900; color:var(--brown-soft); margin:8px 2px 0; font-size:1rem;}
+
+  /* ---------- Complete screen ---------- */
+  .complete{
+    text-align:center; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:26px 18px; margin-top:30px;
+  }
+  .complete h2{font-size:2rem; color:var(--pink-deep); margin:4px 0 8px;}
+  .stars-big{font-size:3.4rem; letter-spacing:8px; height:1.4em;}
+  .stars-big .s{display:inline-block; opacity:.25;}
+  .stars-big .s.on{opacity:1; animation:pop .5s ease both;}
+  .reward-line{font-size:1.3rem; font-weight:800; margin:10px 0 18px;}
+  .complete .btn{margin:6px;}
+
+  /* ---------- FX: confetti + flying coins ---------- */
+  #fx{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50;}
+  .confetti{position:absolute; font-size:1.6rem; animation:confetti-fall linear forwards;}
+  .fly-coin{position:fixed; font-size:1.6rem; z-index:60; pointer-events:none; animation:fly-coin .7s ease-in forwards;}
+
+  /* ---------- Keyframes ---------- */
+  @keyframes bob{0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);}}
+  @keyframes pop{0%{transform:scale(.4);} 70%{transform:scale(1.15);} 100%{transform:scale(1);}}
+  @keyframes wobble{0%,100%{transform:translateX(0);} 20%{transform:translateX(-9px) rotate(-5deg);} 40%{transform:translateX(9px) rotate(5deg);} 60%{transform:translateX(-7px) rotate(-3deg);} 80%{transform:translateX(7px) rotate(3deg);}}
+  @keyframes slideIn{from{transform:translateX(120px) scale(.7); opacity:0;} to{transform:none; opacity:1;}}
+  @keyframes hop{0%,100%{transform:translateY(0);} 30%{transform:translateY(-26px) rotate(-6deg);} 60%{transform:translateY(0) rotate(4deg);}}
+  @keyframes confetti-fall{from{transform:translateY(-30px) rotate(0);} to{transform:translateY(105vh) rotate(540deg); opacity:.9;}}
+  @keyframes fly-coin{from{transform:translate(0,0) scale(1); opacity:1;} to{transform:translate(var(--dx),var(--dy)) scale(.4); opacity:0;}}
+
+  @media (max-width:480px){
+    .choice{width:88px; height:88px; font-size:2rem;}
+    .customer{font-size:3.6rem;}
+    .bubble{font-size:1.05rem; max-width:64%;}
+    .treat{font-size:1.7rem;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ TITLE ============ -->
+  <section class="screen active" id="screen-title">
+    <div class="hero">
+      <div class="logo"><span class="em">🧁</span> <span data-i18n="title">Math Bakery</span> <span class="em">🍪</span></div>
+      <p class="tagline" data-i18n="tagline">Serve yummy treats by solving math!</p>
+      <div class="baker">👩‍🍳</div>
+      <div class="title-treats">🍩 🥨 🎂 🧁 🍪</div>
+      <div class="title-actions">
+        <button class="btn big" id="play-btn" data-i18n="play">▶ Play</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="icon-btn" id="mute-btn-title" data-i18n-title="sound" title="Sound">🔊</button>
+          <button class="mini-link" id="lang-btn">עברית</button>
+          <button class="mini-link" id="reset-btn" data-i18n="reset">Reset progress</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL SELECT ============ -->
+  <section class="screen" id="screen-select">
+    <div class="select-head">
+      <button class="icon-btn" data-go="title">🏠</button>
+      <div class="level-tag" style="flex:1"><span data-i18n="pickBakery">Pick a Bakery</span><small data-i18n="pickSub">your math adventure</small></div>
+      <div class="coins" id="coins-select">🪙 0</div>
+    </div>
+    <div class="grid-levels" id="levels-grid"></div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="screen-play">
+    <div class="topbar">
+      <button class="icon-btn" data-go="select" data-i18n-title="back" title="Back">⬅️</button>
+      <div class="spacer"></div>
+      <div class="level-tag" id="play-level">Level<small>World</small></div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="mute-btn-play" data-i18n-title="sound" title="Sound">🔊</button>
+      <div class="coins" id="coins-play">🪙 0</div>
+    </div>
+
+    <div class="progress-row">
+      <div class="order-count" id="order-count"></div>
+      <div class="timer"><div class="timer-fill" id="timer-fill"></div></div>
+    </div>
+
+    <div class="stage">
+      <div class="customer-row">
+        <div class="customer" id="customer">🐻</div>
+        <div class="bubble" id="bubble" data-i18n="idLike">I'd like…</div>
+      </div>
+      <div class="tray" id="tray"></div>
+      <div class="counter"></div>
+    </div>
+
+    <div class="choices" id="choices"></div>
+  </section>
+
+  <!-- ============ LEVEL COMPLETE ============ -->
+  <section class="screen" id="screen-complete">
+    <div class="complete">
+      <div style="font-size:3.4rem">🎉</div>
+      <h2 id="complete-title" data-i18n="bakeryClosed">Bakery Closed!</h2>
+      <div class="stars-big" id="complete-stars"><span class="s">★</span><span class="s">★</span><span class="s">★</span></div>
+      <div class="reward-line" id="complete-reward"></div>
+      <div>
+        <button class="btn green" id="next-btn"></button>
+        <button class="btn ghost" id="replay-btn" data-i18n="replay">↻ Replay</button>
+        <button class="btn ghost" data-go="select" data-i18n="map">🏠 Map</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div id="fx"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Math Bakery — single-file kids' math game
+   Tweak LEVELS below to change difficulty / add levels.
+   ========================================================= */
+
+// ----- Level configuration (data-driven) -----
+// op: '+', '-' or '×'.  ops can hold several for a "mixed" level.
+// maxSum: cap for addition. maxMinuend: top number for subtraction.
+// tables/maxFactor: multiplication. showArray: draw the cookie array grid.
+// nameKey / worldKey / treatKey are looked up in the I18N table (see below),
+// so all level text is translatable.
+const LEVELS = [
+  // ---- Cupcake Corner : Addition ----
+  {nameKey:"lvl_sweetStart", worldKey:"world_cupcake", emoji:"🧁", treat:"🧁", treatKey:"treat_cupcakes", ops:["+"], maxSum:6,  orders:5, choices:3},
+  {nameKey:"lvl_sugarRush",  worldKey:"world_cupcake", emoji:"🧁", treat:"🧁", treatKey:"treat_cupcakes", ops:["+"], maxSum:10, orders:5, choices:3},
+  {nameKey:"lvl_frostingFun",worldKey:"world_cupcake", emoji:"🧁", treat:"🧁", treatKey:"treat_cupcakes", ops:["+"], maxSum:20, orders:6, choices:4},
+  // ---- Pretzel Place : Subtraction ----
+  {nameKey:"lvl_twistTake",  worldKey:"world_pretzel", emoji:"🥨", treat:"🥨", treatKey:"treat_pretzels", ops:["-"], maxMinuend:10, orders:5, choices:3},
+  {nameKey:"lvl_saltySub",   worldKey:"world_pretzel", emoji:"🥨", treat:"🥨", treatKey:"treat_pretzels", ops:["-"], maxMinuend:15, orders:5, choices:3},
+  {nameKey:"lvl_bigBites",   worldKey:"world_pretzel", emoji:"🥨", treat:"🥨", treatKey:"treat_pretzels", ops:["-"], maxMinuend:20, orders:6, choices:4},
+  // ---- Donut Diner : Mixed + / - ----
+  {nameKey:"lvl_mixedMorning",worldKey:"world_donut",  emoji:"🍩", treat:"🍩", treatKey:"treat_donuts", ops:["+","-"], maxSum:15, maxMinuend:15, orders:5, choices:3},
+  {nameKey:"lvl_rushHour",    worldKey:"world_donut",  emoji:"🍩", treat:"🍩", treatKey:"treat_donuts", ops:["+","-"], maxSum:20, maxMinuend:20, orders:6, choices:4},
+  {nameKey:"lvl_dinerDash",   worldKey:"world_donut",  emoji:"🍩", treat:"🍩", treatKey:"treat_donuts", ops:["+","-"], maxSum:20, maxMinuend:20, orders:7, choices:4},
+  // ---- Cookie Kingdom : Multiplication (array model) ----
+  {nameKey:"lvl_cookieTrays", worldKey:"world_cookie", emoji:"🍪", treat:"🍪", treatKey:"treat_cookies", ops:["×"], tables:[2,5],     maxFactor:5, orders:5, choices:3, showArray:true},
+  {nameKey:"lvl_royalRows",   worldKey:"world_cookie", emoji:"🍪", treat:"🍪", treatKey:"treat_cookies", ops:["×"], tables:[2,3,5],   maxFactor:5, orders:6, choices:4, showArray:true},
+  {nameKey:"lvl_masterBaker", worldKey:"world_cookie", emoji:"🍪", treat:"🍪", treatKey:"treat_cookies", ops:["×"], tables:[2,3,4,5], maxFactor:5, orders:7, choices:4, showArray:true},
+];
+
+// ----- String table (i18n). Add a language by adding another block. -----
+// Language is a saved setting (save.lang); switch it with the title-screen button.
+const I18N = {
+  en:{
+    dir:"ltr", langName:"English",
+    title:"Math Bakery",
+    tagline:"Serve yummy treats by solving math!",
+    play:"▶ Play",
+    sound:"Sound",
+    reset:"Reset progress",
+    pickBakery:"Pick a Bakery",
+    pickSub:"your math adventure",
+    back:"Back",
+    order:"Order",        // shown as: Order 2/5
+    orders:"orders",      // shown as: 5 orders
+    bake:"Please bake",   // bubble: Please bake 5 + 3 cookies!
+    idLike:"I'd like…",
+    bakeryClosed:"Bakery Closed!",
+    ordersUp:"Order's Up! 🎉",
+    masterBaker:"You're a Master Baker! 🏆",
+    coins:"coins",
+    perfect:"Perfect!",
+    oops_one:"1 oops",
+    oops_many:"oops",     // shown as: 3 oops
+    next:"Next ▶",
+    replay:"↻ Replay",
+    map:"🏠 Map",
+    resetConfirm:"Start over? This clears all stars and coins.",
+    resetDone:"Bakery reset! 🧹",
+    treat_cupcakes:"cupcakes", treat_pretzels:"pretzels", treat_donuts:"donuts", treat_cookies:"cookies",
+    world_cupcake:"Cupcake Corner", world_pretzel:"Pretzel Place", world_donut:"Donut Diner", world_cookie:"Cookie Kingdom",
+    lvl_sweetStart:"Sweet Start", lvl_sugarRush:"Sugar Rush", lvl_frostingFun:"Frosting Fun",
+    lvl_twistTake:"Twist & Take", lvl_saltySub:"Salty Subtract", lvl_bigBites:"Big Bites",
+    lvl_mixedMorning:"Mixed Morning", lvl_rushHour:"Rush Hour", lvl_dinerDash:"Diner Dash",
+    lvl_cookieTrays:"Cookie Trays", lvl_royalRows:"Royal Rows", lvl_masterBaker:"Master Baker",
+  },
+  he:{
+    dir:"rtl", langName:"עברית",
+    title:"מאפיית החשבון",
+    tagline:"פותרים תרגילים ומגישים פינוקים טעימים!",
+    play:"▶ שחקו",
+    sound:"צליל",
+    reset:"איפוס התקדמות",
+    pickBakery:"בחרו מאפייה",
+    pickSub:"הרפתקת החשבון שלך",
+    back:"חזרה",
+    order:"הזמנה",
+    orders:"הזמנות",
+    bake:"אפו בבקשה",
+    idLike:"אני רוצה…",
+    bakeryClosed:"המאפייה נסגרה!",
+    ordersUp:"ההזמנה מוכנה! 🎉",
+    masterBaker:"אתם אופים אלופים! 🏆",
+    coins:"מטבעות",
+    perfect:"מושלם!",
+    oops_one:"טעות אחת",
+    oops_many:"טעויות",
+    next:"הבא ◀",
+    replay:"שוב ↻",
+    map:"🏠 מפה",
+    resetConfirm:"להתחיל מחדש? כל הכוכבים והמטבעות יימחקו.",
+    resetDone:"המאפייה אופסה! 🧹",
+    treat_cupcakes:"קאפקייקס", treat_pretzels:"בייגלה", treat_donuts:"סופגניות", treat_cookies:"עוגיות",
+    world_cupcake:"פינת הקאפקייקס", world_pretzel:"פינת הבייגלה", world_donut:"מסעדת הסופגניות", world_cookie:"ממלכת העוגיות",
+    lvl_sweetStart:"התחלה מתוקה", lvl_sugarRush:"ריצת סוכר", lvl_frostingFun:"כיף של זיגוג",
+    lvl_twistTake:"פיתול וחיסור", lvl_saltySub:"חיסור מלוח", lvl_bigBites:"ביסים גדולים",
+    lvl_mixedMorning:"בוקר מעורבב", lvl_rushHour:"שעת עומס", lvl_dinerDash:"ריצה במסעדה",
+    lvl_cookieTrays:"מגשי עוגיות", lvl_royalRows:"שורות מלכותיות", lvl_masterBaker:"אופה מומחה",
+  },
+};
+const DEFAULT_LANG = "he";
+
+// Look up a translated string for the current language (falls back to English, then the key).
+function t(key){
+  const L = I18N[save.lang] || I18N[DEFAULT_LANG];
+  if(L && L[key]!=null) return L[key];
+  if(I18N.en[key]!=null) return I18N.en[key];
+  return key;
+}
+// Count of mistakes as friendly text ("Perfect!", "1 oops", "3 oops").
+function mistakesText(m){ return m===0 ? t("perfect") : (m===1 ? t("oops_one") : m+" "+t("oops_many")); }
+
+const CUSTOMERS = ["🐻","🐱","🐰","🦊","🦄","🐸","🐼","🐵","🐨","🐶","🐯","🦁","🐷","🐮","🐔","🦉"];
+
+// ----- Persistent save -----
+const SAVE_KEY = "mathBakery.save";
+const DEFAULT_SAVE = {unlockedLevel:0, coins:0, starsByLevel:{}, muted:false, lang:DEFAULT_LANG};
+
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return {...DEFAULT_SAVE};
+    return {...DEFAULT_SAVE, ...JSON.parse(raw)};
+  }catch(e){ return {...DEFAULT_SAVE}; }
+}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+
+let save = loadSave();
+
+// ----- Runtime state -----
+const state = {
+  levelIndex:0,
+  orderIndex:0,
+  problem:null,
+  answered:false,
+  levelMistakes:0,
+  levelCoins:0,
+  bonus:0,
+  timerId:null,
+};
+
+// ----- Tunables -----
+const BASE_COINS = 10;     // coins for a correct answer
+const MAX_BONUS  = 10;     // extra coins for answering fast
+const TIMER_MS   = 12000;  // gentle countdown for the speed bonus
+
+// ----- Helpers -----
+const $ = sel => document.querySelector(sel);
+const randInt = (lo,hi) => lo + Math.floor(Math.random()*(hi-lo+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// =========================================================
+//  Sound (tiny Web Audio jingles — no files)
+// =========================================================
+let audioCtx = null;
+function beep(freq, start, dur, type="sine", gain=0.15){
+  if(save.muted) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime + start;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(gain, t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0+dur);
+  }catch(e){}
+}
+function playSound(type){
+  if(type==="correct"){ beep(660,0,.15,"triangle"); beep(880,.12,.22,"triangle"); }
+  else if(type==="wrong"){ beep(220,0,.18,"sine",.12); }
+  else if(type==="level"){ [523,659,784,1046].forEach((f,i)=>beep(f,i*.12,.25,"triangle")); }
+  else if(type==="tap"){ beep(440,0,.05,"square",.06); }
+}
+
+// =========================================================
+//  Problem generation
+// =========================================================
+function generateProblem(level){
+  const op = pick(level.ops);
+  let a,b,answer,rows=0,cols=0;
+  if(op==="+"){
+    const cap = level.maxSum;
+    a = randInt(1, cap-1);
+    b = randInt(1, cap-a);
+    answer = a+b;
+  }else if(op==="-"){
+    a = randInt(2, level.maxMinuend);
+    b = randInt(1, a-1);
+    answer = a-b;
+  }else{ // ×
+    a = pick(level.tables);           // rows
+    b = randInt(1, level.maxFactor);  // columns
+    answer = a*b;
+    rows=a; cols=b;
+  }
+  return {op,a,b,answer,rows,cols};
+}
+
+function makeChoices(answer, level){
+  const set = new Set([answer]);
+  const candidates = shuffle([answer+1,answer-1,answer+2,answer-2,answer+3,answer+10,answer-10]);
+  for(const c of candidates){
+    if(set.size>=level.choices) break;
+    if(c>=0 && !set.has(c)) set.add(c);
+  }
+  let extra = answer+4;
+  while(set.size<level.choices){ if(extra>=0 && !set.has(extra)) set.add(extra); extra++; }
+  return shuffle([...set]);
+}
+
+// =========================================================
+//  Screen navigation
+// =========================================================
+function showScreen(name){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("#screen-"+name).classList.add("active");
+  if(name==="select") renderSelect();
+}
+
+// =========================================================
+//  Level select
+// =========================================================
+function renderSelect(){
+  $("#coins-select").textContent = "🪙 "+save.coins;
+  const grid = $("#levels-grid");
+  grid.innerHTML = "";
+  let lastWorld = null;
+  LEVELS.forEach((lv,i)=>{
+    if(lv.worldKey!==lastWorld){
+      lastWorld = lv.worldKey;
+      const wl = document.createElement("div");
+      wl.className="world-label";
+      wl.textContent = t(lv.worldKey);
+      grid.appendChild(wl);
+    }
+    const locked = i > save.unlockedLevel;
+    const stars = save.starsByLevel[i]||0;
+    const card = document.createElement("div");
+    card.className = "level-card"+(locked?" locked":"");
+    card.innerHTML = `
+      <div class="lc-emoji">${locked?"🔒":lv.emoji}</div>
+      <div class="lc-name">${t(lv.nameKey)}</div>
+      <div class="lc-world">${lv.ops.join(" ")} • ${lv.orders} ${t("orders")}</div>
+      <div class="lc-stars">${starString(stars)}</div>`;
+    if(!locked) card.addEventListener("click",()=>startLevel(i));
+    grid.appendChild(card);
+  });
+}
+function starString(n){ return "★★★".slice(0,n).padEnd(3,"☆"); }
+
+// =========================================================
+//  Playing a level
+// =========================================================
+function startLevel(i){
+  state.levelIndex = i;
+  state.orderIndex = 0;
+  state.levelMistakes = 0;
+  state.levelCoins = 0;
+  const lv = LEVELS[i];
+  $("#play-level").innerHTML = `${t(lv.nameKey)}<small>${t(lv.worldKey)}</small>`;
+  showScreen("play");
+  nextOrder();
+}
+
+function nextOrder(){
+  const lv = LEVELS[state.levelIndex];
+  if(state.orderIndex >= lv.orders){ completeLevel(); return; }
+
+  state.problem = generateProblem(lv);
+  state.answered = false;
+
+  // top bar
+  $("#coins-play").textContent = "🪙 "+save.coins;
+  $("#order-count").textContent = `${t("order")} ${state.orderIndex+1}/${lv.orders}`;
+
+  // customer + speech bubble (math kept LTR so "5 + 3" reads correctly in any language)
+  $("#customer").className = "customer";
+  void $("#customer").offsetWidth; // restart slide-in animation
+  $("#customer").textContent = pick(CUSTOMERS);
+  const p = state.problem;
+  $("#bubble").innerHTML = `${t("bake")} <b dir="ltr">${p.a} ${p.op} ${p.b}</b> ${t(lv.treatKey)}! 😋`;
+
+  renderTray(lv, p, false);
+  renderChoices(lv, p);
+  startTimer();
+}
+
+function renderTray(lv, p, baked){
+  const tray = $("#tray");
+  tray.className = "tray"+(baked?" baked":"");
+  const treat = lv.treat;
+  const dough = baked ? "" : "dough";
+  if(p.op==="×"){
+    // multiplication keeps the array model (rows x cols) — not boxed
+    const grid = document.createElement("div");
+    grid.className="grid";
+    grid.style.gridTemplateColumns = `repeat(${p.cols}, 1fr)`;
+    for(let k=0;k<p.rows*p.cols;k++){
+      grid.innerHTML += `<span class="treat ${dough}">${treat}</span>`;
+    }
+    tray.innerHTML = "";
+    tray.appendChild(grid);
+  }else if(p.op==="+"){
+    tray.innerHTML =
+      `<div class="group">${boxedTreats(p.a, treat, dough)}</div>`+
+      `<span class="op-sign">+</span>`+
+      `<div class="group">${boxedTreats(p.b, treat, dough)}</div>`;
+  }else{ // subtraction: show all `a` treats, cross out the last `b`
+    tray.innerHTML = `<div class="group">${boxedTreats(p.a, treat, dough, p.a - p.b)}</div>`;
+  }
+}
+
+// Lay out `count` treats as ten-frames — boxes of 10 (2x5), with the last box
+// padded by empty slots — so numbers up to 20 read at a glance (e.g. 14 = one
+// full box + a box holding 4). Counts under 10 stay loose to keep early levels simple.
+// eatenFrom (optional): index from which treats are shown "eaten" (for subtraction).
+function boxedTreats(count, treat, dough, eatenFrom){
+  const cell = (i)=>{
+    if(i >= count) return `<span class="slot"></span>`;        // empty ten-frame slot
+    const eaten = (eatenFrom!=null && i >= eatenFrom);
+    const cls = eaten ? "eaten" : dough;
+    return `<span class="eaten-wrap"><span class="treat ${cls}">${treat}</span>${eaten?'<span class="x">✖</span>':''}</span>`;
+  };
+  if(count < 10){
+    let inner=""; for(let i=0;i<count;i++) inner+=cell(i);
+    return `<div class="loose">${inner}</div>`;
+  }
+  const boxes = Math.ceil(count/10);
+  let html="";
+  for(let b=0;b<boxes;b++){
+    let inner=""; for(let k=0;k<10;k++) inner+=cell(b*10+k);
+    html += `<div class="ten-box">${inner}</div>`;
+  }
+  return html;
+}
+
+function renderChoices(lv, p){
+  const wrap = $("#choices");
+  wrap.innerHTML = "";
+  makeChoices(p.answer, lv).forEach(val=>{
+    const b = document.createElement("button");
+    b.className="choice";
+    b.innerHTML = `<span>${val}</span>`;
+    b.addEventListener("click",()=>onAnswer(val,b));
+    wrap.appendChild(b);
+  });
+}
+
+function onAnswer(val, btn){
+  if(state.answered) return;
+  const p = state.problem;
+  if(val===p.answer){
+    state.answered = true;
+    stopTimer();
+    playSound("correct");
+    // coins: base + current speed bonus
+    const earned = BASE_COINS + state.bonus;
+    state.levelCoins += earned;
+    save.coins += earned;
+    persist();
+    $("#coins-play").textContent = "🪙 "+save.coins;
+    btn.classList.add("correct");
+    document.querySelectorAll(".choice").forEach(c=>{ if(c!==btn) c.classList.add("dim"); });
+    // bake the treats + happy customer
+    renderTray(LEVELS[state.levelIndex], p, true);
+    const cust = $("#customer"); cust.classList.add("hop");
+    flyCoins(btn);
+    sparkle();
+    setTimeout(()=>{ state.orderIndex++; nextOrder(); }, 1050);
+  }else{
+    // gentle: wobble, no penalty, can keep trying
+    if(!btn.classList.contains("dim")){
+      state.levelMistakes++;
+      playSound("wrong");
+      btn.classList.add("wrong","dim");
+      setTimeout(()=>btn.classList.remove("wrong"), 500);
+    }
+  }
+}
+
+// ----- gentle timer (speed bonus only) -----
+function startTimer(){
+  stopTimer();
+  const start = performance.now();
+  $("#timer-fill").style.width = "100%";
+  state.bonus = MAX_BONUS;
+  state.timerId = setInterval(()=>{
+    const elapsed = performance.now()-start;
+    const frac = Math.max(0, 1 - elapsed/TIMER_MS);
+    $("#timer-fill").style.width = (frac*100)+"%";
+    state.bonus = Math.round(MAX_BONUS*frac);
+    if(frac<=0) stopTimer(); // bonus gone — order still continues, no penalty
+  },100);
+}
+function stopTimer(){ if(state.timerId){ clearInterval(state.timerId); state.timerId=null; } }
+
+// =========================================================
+//  Level complete
+// =========================================================
+function completeLevel(){
+  stopTimer();
+  const i = state.levelIndex;
+  const m = state.levelMistakes;
+  const stars = m===0 ? 3 : (m<=2 ? 2 : 1);
+
+  // persist progress
+  save.starsByLevel[i] = Math.max(save.starsByLevel[i]||0, stars);
+  if(i+1 <= LEVELS.length-1) save.unlockedLevel = Math.max(save.unlockedLevel, i+1);
+  persist();
+
+  const isLast = i >= LEVELS.length-1;
+  $("#complete-title").textContent = isLast ? t("masterBaker") : t("ordersUp");
+  $("#complete-reward").textContent = `🪙 +${state.levelCoins} ${t("coins")}  •  ${mistakesText(m)}`;
+
+  // animate stars
+  const starEls = document.querySelectorAll("#complete-stars .s");
+  starEls.forEach((s,idx)=>{ s.classList.remove("on"); });
+  showScreen("complete");
+  starEls.forEach((s,idx)=>{
+    setTimeout(()=>{ if(idx<stars){ s.classList.add("on"); playSound("tap"); } }, 300+idx*250);
+  });
+
+  // next button behaviour
+  const nextBtn = $("#next-btn");
+  if(isLast){
+    nextBtn.textContent = t("map");
+    nextBtn.onclick = ()=>showScreen("select");
+  }else{
+    nextBtn.textContent = t("next");
+    nextBtn.onclick = ()=>startLevel(i+1);
+  }
+  $("#replay-btn").onclick = ()=>startLevel(i);
+
+  playSound("level");
+  confetti();
+}
+
+// =========================================================
+//  Visual FX
+// =========================================================
+function confetti(){
+  const fx = $("#fx");
+  const emojis = ["🎉","✨","⭐","🍪","🧁","🎊","🍩"];
+  for(let i=0;i<40;i++){
+    const c = document.createElement("div");
+    c.className="confetti";
+    c.textContent = pick(emojis);
+    c.style.left = Math.random()*100+"vw";
+    c.style.animationDuration = (1.6+Math.random()*1.6)+"s";
+    c.style.animationDelay = (Math.random()*0.5)+"s";
+    fx.appendChild(c);
+    setTimeout(()=>c.remove(), 3600);
+  }
+}
+function sparkle(){
+  const fx = $("#fx");
+  const r = $("#tray").getBoundingClientRect();
+  for(let i=0;i<10;i++){
+    const s = document.createElement("div");
+    s.className="confetti";
+    s.textContent = pick(["✨","⭐","💛"]);
+    s.style.left = (r.left + Math.random()*r.width)+"px";
+    s.style.top = (r.top)+"px";
+    s.style.animationDuration = "1s";
+    fx.appendChild(s);
+    setTimeout(()=>s.remove(), 1100);
+  }
+}
+function flyCoins(fromEl){
+  const r = fromEl.getBoundingClientRect();
+  const target = $("#coins-play").getBoundingClientRect();
+  for(let i=0;i<6;i++){
+    const c = document.createElement("div");
+    c.className="fly-coin";
+    c.textContent="🪙";
+    c.style.left=(r.left+r.width/2)+"px";
+    c.style.top=(r.top+r.height/2)+"px";
+    c.style.setProperty("--dx",(target.left - r.left + (Math.random()*30-15))+"px");
+    c.style.setProperty("--dy",(target.top - r.top + (Math.random()*20-10))+"px");
+    c.style.animationDelay=(i*0.05)+"s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 800);
+  }
+}
+
+// =========================================================
+//  Mute toggle + wiring
+// =========================================================
+function refreshMute(){
+  const icon = save.muted ? "🔇" : "🔊";
+  $("#mute-btn-title").textContent = icon;
+  $("#mute-btn-play").textContent = icon;
+}
+function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(!save.muted) playSound("tap"); }
+
+// =========================================================
+//  Language (string table) — applies text + page direction
+// =========================================================
+function applyLanguage(){
+  if(!I18N[save.lang]) save.lang = DEFAULT_LANG;
+  const L = I18N[save.lang];
+  document.documentElement.lang = save.lang;
+  document.documentElement.dir = L.dir;
+  // static text + tooltips marked in the HTML
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el=>{ el.title = t(el.dataset.i18nTitle); });
+  // the toggle shows the OTHER language to switch to
+  $("#lang-btn").textContent = I18N[save.lang==="he"?"en":"he"].langName;
+  // refresh a visible dynamic screen so its text updates too
+  if($("#screen-select").classList.contains("active")) renderSelect();
+}
+function toggleLanguage(){ save.lang = (save.lang==="he"?"en":"he"); persist(); applyLanguage(); playSound("tap"); }
+
+document.addEventListener("click", e=>{
+  const go = e.target.closest("[data-go]");
+  if(go) showScreen(go.getAttribute("data-go"));
+});
+$("#play-btn").addEventListener("click", ()=>{ playSound("tap"); showScreen("select"); });
+$("#mute-btn-title").addEventListener("click", toggleMute);
+$("#mute-btn-play").addEventListener("click", toggleMute);
+$("#lang-btn").addEventListener("click", toggleLanguage);
+$("#reset-btn").addEventListener("click", ()=>{
+  if(confirm(t("resetConfirm"))){
+    const lang = save.lang;                 // keep the chosen language across a reset
+    save = {...DEFAULT_SAVE, lang};
+    persist(); refreshMute(); renderSelect();
+    alert(t("resetDone"));
+  }
+});
+
+// init
+refreshMute();
+applyLanguage();
+</script>
+</body>
+</html>
