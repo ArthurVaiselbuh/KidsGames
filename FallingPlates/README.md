@@ -19,7 +19,9 @@ progress**, since the alphabets and words are completely different.
 ## ▶ How to play
 
 1. **Double-click `index.html`** (or open it in any modern browser — Chrome, Edge, Firefox, Safari).
-2. Press **Play**, then pick a level.
+2. Press **Play**. A short **intro cutscene** plays — the baker wheels in a cart full
+   of plates, trips over a banana peel, and the plates go flying sky-high (that's why
+   he spends the whole game catching them!). Tap to skip. Then pick a level.
 3. Plates fall slowly from the top. A **stressed-out baker** 👨‍🍳 paces the floor.
    **Type the letter** shown on a plate and he dashes underneath it to catch it!
    - The very first level is extra slow — **one plate at a time, one letter each**.

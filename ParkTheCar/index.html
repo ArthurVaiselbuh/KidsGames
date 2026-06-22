@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>חנו את המכונית 🚗 — משחק נהיגה לילדים</title>
+<style>
+  /* ---------- Theme ---------- */
+  :root{
+    --road:#5b6470;
+    --road-2:#6c7682;
+    --grass:#8fd36b;
+    --grass-2:#7bc457;
+    --sky:#bfe3ff;
+    --cream:#fff6e9;
+    --ink:#2c3e57;
+    --ink-soft:#6b7d95;
+    --blue:#5aa9f7;
+    --blue-deep:#3a7fd6;
+    --good:#5fbf6a;
+    --sun:#ffd166;
+    --pink:#ff8fab;
+    --pink-deep:#f4628a;
+    --shadow:0 6px 0 rgba(0,0,0,.12), 0 12px 24px rgba(0,0,0,.12);
+    --radius:22px;
+    font-size:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Comic Sans MS","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 16% 12%, #fff 0 7%, transparent 8%),
+      radial-gradient(circle at 84% 18%, #fff 0 5%, transparent 6%),
+      linear-gradient(160deg, var(--sky), #eaf6ff 50%, var(--cream));
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+  }
+  #app{
+    max-width:820px;
+    margin:0 auto;
+    min-height:100%;
+    padding:14px 16px 22px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen{display:none; animation:fade .35s ease both; flex:1; flex-direction:column;}
+  .screen.active{display:flex;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:inherit; font-weight:800; cursor:pointer; border:none;
+    background:var(--blue); color:#fff; border-radius:var(--radius);
+    padding:16px 26px; font-size:1.25rem; box-shadow:var(--shadow);
+    transition:transform .08s ease, filter .15s ease;
+    text-shadow:0 2px 0 rgba(0,0,0,.12);
+  }
+  .btn:active{transform:translateY(3px);}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.big{font-size:1.7rem; padding:20px 44px;}
+  .btn.ghost{background:#fff; color:var(--ink); box-shadow:0 4px 0 rgba(0,0,0,.1);}
+  .btn.green{background:var(--good);}
+  .icon-btn{
+    background:#fff; border:none; border-radius:50%; width:48px; height:48px;
+    font-size:1.4rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.1);
+  }
+  .icon-btn:active{transform:translateY(2px);}
+  .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
+
+  /* ---------- Title screen ---------- */
+  .hero{text-align:center; padding:18px 6px 6px; margin:auto 0;}
+  .logo{
+    font-size:clamp(2.3rem,8vw,3.9rem); font-weight:900; line-height:1.05;
+    color:var(--blue-deep); text-shadow:0 4px 0 #fff, 0 6px 0 rgba(0,0,0,.12);
+    margin:6px 0 2px;
+  }
+  .logo .em{display:inline-block; animation:bob 2.2s ease-in-out infinite;}
+  .tagline{font-size:1.15rem; color:var(--ink-soft); margin:0 0 16px;}
+  .title-cars{font-size:2.6rem; letter-spacing:8px; margin:6px 0 18px; opacity:.95;}
+  .title-cars span{display:inline-block; animation:bob 2.6s ease-in-out infinite;}
+  .title-cars span:nth-child(2){animation-delay:.2s;}
+  .title-cars span:nth-child(3){animation-delay:.4s;}
+  .title-cars span:nth-child(4){animation-delay:.6s;}
+  .title-cars span:nth-child(5){animation-delay:.8s;}
+  .title-actions{display:flex; flex-direction:column; align-items:center; gap:12px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+  .topbar .spacer{flex:1;}
+  .level-tag{font-weight:900; font-size:1.05rem; text-align:center; line-height:1.1;}
+  .level-tag small{display:block; font-weight:700; color:var(--ink-soft); font-size:.8rem;}
+  .lang-pill{
+    background:#fff; border-radius:999px; padding:8px 16px; font-weight:900;
+    box-shadow:0 4px 0 rgba(0,0,0,.1); font-size:1.05rem; white-space:nowrap;
+  }
+  .lives{font-size:1.25rem; white-space:nowrap; letter-spacing:1px;}
+
+  /* ---------- Play arena ---------- */
+  .arena{
+    position:relative; flex:1; min-height:430px;
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    overflow:hidden; touch-action:none;
+  }
+  .arena.shake{animation:shake .4s ease;}
+  @keyframes shake{
+    0%,100%{transform:translate(0,0);}
+    15%{transform:translate(-7px,3px);} 30%{transform:translate(7px,-3px);}
+    45%{transform:translate(-6px,-2px);} 60%{transform:translate(6px,3px);}
+    75%{transform:translate(-4px,2px);} 90%{transform:translate(4px,-2px);}
+  }
+  .hint{
+    position:absolute; top:8px; left:0; right:0; text-align:center;
+    font-weight:800; color:#fff; font-size:1rem; pointer-events:none;
+    text-shadow:0 2px 4px rgba(0,0,0,.45); z-index:6;
+  }
+
+  /* the SVG scene fills the arena; the car is layered on top */
+  .scene{position:absolute; inset:0; width:100%; height:100%; display:block;}
+
+  /* ambient drifting cloud shadow over the lot */
+  .cloud-shadow{
+    position:absolute; top:0; width:200px; height:140px; z-index:2; pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,.10), transparent 70%);
+    animation:drift 16s linear infinite; opacity:.8;
+  }
+  @keyframes drift{from{transform:translateX(-220px);} to{transform:translateX(120%);}}
+
+  /* the goal spot highlight, positioned by JS in % */
+  .goal-glow{
+    position:absolute; z-index:3; border-radius:6px; pointer-events:none;
+    border:3px dashed rgba(255,255,255,.85);
+    background:rgba(255,209,102,.18);
+    transition:background .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .goal-glow.aligned{
+    border-color:#bff0c4; background:rgba(95,191,106,.34);
+    box-shadow:0 0 22px 6px rgba(95,191,106,.55);
+  }
+
+  /* ---------- Hero car ---------- */
+  .car{
+    position:absolute; z-index:5; left:0; top:0;
+    transform-origin:50% 50%; will-change:transform;
+    filter:drop-shadow(0 5px 4px rgba(0,0,0,.32));
+  }
+  .car svg{display:block; width:100%; height:auto;}
+  .car .brake{opacity:0; transition:opacity .1s;}
+  .car.reversing .brake{opacity:1;}
+  .car .head{opacity:.9;}
+  /* exhaust puff spawned by JS */
+  .puff{
+    position:absolute; z-index:4; width:16px; height:16px; border-radius:50%;
+    background:radial-gradient(circle at 40% 40%, rgba(255,255,255,.9), rgba(200,200,200,.5));
+    pointer-events:none; animation:puff .7s ease-out forwards;
+  }
+  @keyframes puff{
+    0%{transform:scale(.4); opacity:.7;}
+    100%{transform:scale(1.6) translateY(-12px); opacity:0;}
+  }
+
+  /* ---------- Touch controls ---------- */
+  .pad{
+    display:flex; align-items:center; justify-content:center; gap:18px;
+    margin:12px 2px 0; user-select:none;
+  }
+  .pad-col{display:flex; flex-direction:column; gap:10px; align-items:center;}
+  .pad-row{display:flex; gap:10px; align-items:center;}
+  .pedal{
+    font-family:inherit; border:none; cursor:pointer; color:#fff; font-weight:900;
+    width:72px; height:72px; border-radius:50%; font-size:1.7rem;
+    box-shadow:var(--shadow); touch-action:none;
+    transition:transform .06s ease, filter .12s ease;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pedal:active,.pedal.down{transform:translateY(3px); filter:brightness(1.12);}
+  .pedal.gas{background:var(--good);}
+  .pedal.rev{background:var(--pink);}
+  .pedal.steer{background:var(--blue); width:64px; height:64px; font-size:1.5rem;}
+  @media (max-width:380px){
+    .pedal{width:62px; height:62px; font-size:1.5rem;}
+    .pedal.steer{width:56px; height:56px;}
+    .pad{gap:10px;}
+  }
+
+  /* ---------- Level select ---------- */
+  .select-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .grid-levels{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px;}
+  .level-card{
+    background:#fff; border-radius:20px; box-shadow:var(--shadow); padding:14px 10px;
+    text-align:center; cursor:pointer; border:3px solid transparent; transition:transform .1s;
+  }
+  .level-card:active{transform:translateY(2px);}
+  .level-card .lc-emoji{font-size:2.6rem;}
+  .level-card .lc-name{font-weight:900; margin:4px 0 2px;}
+  .level-card .lc-sub{font-size:.82rem; color:var(--ink-soft); min-height:1.6em;}
+  .level-card .lc-stars{font-size:1.1rem; letter-spacing:2px; margin-top:6px; color:var(--sun);}
+  .level-card.locked{opacity:.55; cursor:not-allowed; background:#eef1f5;}
+  .level-card.locked .lc-emoji{filter:grayscale(1);}
+  .world-label{grid-column:1/-1; font-weight:900; color:var(--ink-soft); margin:8px 2px 0; font-size:1rem;}
+
+  /* ---------- Complete screen ---------- */
+  .complete{
+    text-align:center; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:26px 18px; margin:auto 0;
+  }
+  .complete h2{font-size:2rem; color:var(--blue-deep); margin:4px 0 8px;}
+  .stars-big{font-size:3.4rem; letter-spacing:8px; height:1.4em; color:var(--sun);}
+  .stars-big .s{display:inline-block; opacity:.25;}
+  .stars-big .s.on{opacity:1; animation:pop .5s ease both;}
+  .reward-line{font-size:1.3rem; font-weight:800; margin:10px 0 18px;}
+  .complete .btn{margin:6px;}
+
+  /* ---------- FX ---------- */
+  #fx{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50;}
+  .confetti{position:absolute; font-size:1.6rem; animation:confetti-fall linear forwards;}
+  .boom{
+    position:absolute; z-index:55; font-size:3rem; transform:translate(-50%,-50%);
+    pointer-events:none; animation:boom .6s ease-out forwards;
+  }
+  @keyframes boom{
+    0%{transform:translate(-50%,-50%) scale(.3) rotate(-10deg); opacity:0;}
+    35%{transform:translate(-50%,-50%) scale(1.3) rotate(8deg); opacity:1;}
+    100%{transform:translate(-50%,-50%) scale(1.7); opacity:0;}
+  }
+
+  /* ---------- Keyframes ---------- */
+  @keyframes bob{0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);}}
+  @keyframes pop{0%{transform:scale(.4);} 70%{transform:scale(1.15);} 100%{transform:scale(1);}}
+  @keyframes confetti-fall{from{transform:translateY(-30px) rotate(0);} to{transform:translateY(105vh) rotate(540deg); opacity:.9;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ TITLE ============ -->
+  <section class="screen active" id="screen-title">
+    <div class="hero">
+      <div class="logo"><span class="em">🚗</span> <span data-i18n="title">Park the Car</span></div>
+      <p class="tagline" data-i18n="tagline">Steer into the spot without bumping!</p>
+      <div class="title-cars"><span>🚙</span><span>🅿️</span><span>🚗</span><span>🚥</span><span>🚕</span></div>
+      <div class="title-actions">
+        <button class="btn big" id="play-btn" data-i18n="play">▶ Play</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="icon-btn" id="mute-btn-title" data-i18n-title="sound" title="Sound">🔊</button>
+          <button class="mini-link" id="lang-btn">עברית</button>
+          <button class="mini-link" id="reset-btn" data-i18n="reset">Reset progress</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL SELECT ============ -->
+  <section class="screen" id="screen-select">
+    <div class="select-head">
+      <button class="icon-btn" data-go="title">🏠</button>
+      <div class="level-tag" style="flex:1"><span data-i18n="pickLevel">Pick a Spot</span><small data-i18n="pickSub">your parking adventure</small></div>
+      <div class="lang-pill" id="lang-pill-select">🇬🇧 EN</div>
+    </div>
+    <div class="grid-levels" id="levels-grid"></div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="screen-play">
+    <div class="topbar">
+      <button class="icon-btn" data-go="select" data-i18n-title="back" title="Back">⬅️</button>
+      <div class="spacer"></div>
+      <div class="level-tag" id="play-level">Level<small>Parking</small></div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="mute-btn-play" data-i18n-title="sound" title="Sound">🔊</button>
+    </div>
+
+    <div class="topbar" style="margin-bottom:6px;">
+      <div class="lives" id="lives">❤️❤️❤️</div>
+      <div class="spacer"></div>
+      <div class="level-tag" id="park-status" style="color:var(--ink-soft); font-size:.95rem;"></div>
+    </div>
+
+    <div class="arena" id="arena">
+      <!-- SVG lot scenery is injected here by JS, then the goal glow, car and FX layers -->
+      <div class="hint" id="hint" data-i18n="hint">Park without crashing!</div>
+    </div>
+
+    <!-- on-screen touch controls (also usable with the mouse) -->
+    <div class="pad" id="pad">
+      <button class="pedal steer" data-key="left" aria-label="left">◀</button>
+      <div class="pad-col">
+        <button class="pedal gas" data-key="up" aria-label="gas">▲</button>
+        <button class="pedal rev" data-key="down" aria-label="reverse">▼</button>
+      </div>
+      <button class="pedal steer" data-key="right" aria-label="right">▶</button>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL COMPLETE ============ -->
+  <section class="screen" id="screen-complete">
+    <div class="complete">
+      <div style="font-size:3.4rem" id="complete-emoji">🎉</div>
+      <h2 id="complete-title" data-i18n="parked">Parked!</h2>
+      <div class="stars-big" id="complete-stars"><span class="s">★</span><span class="s">★</span><span class="s">★</span></div>
+      <div class="reward-line" id="complete-reward"></div>
+      <div>
+        <button class="btn green" id="next-btn"></button>
+        <button class="btn ghost" id="replay-btn" data-i18n="replay">↻ Replay</button>
+        <button class="btn ghost" data-go="select" data-i18n="map">🏠 Map</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div id="fx"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Park the Car — single-file kids' driving puzzle.
+   Steer a car into the marked spot without hitting anything.
+   Realistic-ish steering: Up = forward, Down = reverse,
+   Left/Right turn the heading ONLY while the car is moving.
+   Hitting an obstacle or the arena edge = crash (lose a life,
+   reset to spawn). Out of lives = restart the level.
+   Tweak LEVELS below to retune / add levels.
+   ========================================================= */
+
+// ----- Level configuration (data-driven, language-independent) -----
+// Coordinates are in ARENA UNITS: a fixed 0..100 (x) by 0..70 (y) field,
+// scaled to the real pixel size of the arena at runtime. This keeps levels
+// resolution-independent. The car & obstacles are rectangles {x,y,w,h}
+// (x,y = CENTER). Headings (deg): 0 = pointing right(+x), 90 = down(+y).
+//   obstacles : array of {x,y,w,h, kind} blocking rectangles (parked cars / walls / cones)
+//   goal      : {x,y,w,h, heading} the bay you must rest inside, aligned to `heading`
+//   spawn     : {x,y, heading} where the hero car starts
+//   lives     : starting lives
+//   nameKey   : i18n key for the level name
+//   worldKey  : i18n key grouping label on the map
+//   emoji     : map card icon
+const FW = 100, FH = 70;               // field width/height in arena units
+const CAR_W = 14, CAR_H = 7;           // hero car sprite size (units)
+// Collision box is a bit smaller than the sprite: the drawn body fills only
+// ~12.6 x 5.4 of the 14 x 7 element (rounded nose + thin wheels poke past it),
+// so using the full sprite size made the car "crash" without visibly touching.
+const CAR_HIT_W = 12.6, CAR_HIT_H = 5.4;
+
+// The level *types* are interleaved (not grouped) so no two neighbours feel the
+// same, while difficulty still trends up — gaps tighten and spawns get more
+// off-line. Types in play:
+//   • straight-in  : drive down into a gap between two side-by-side cars
+//   • parallel     : back into a curbside slot, approached from left or right
+//   • turn-in      : approach from a side and swing 90° into the bay
+//   • navigate     : weave around walls/cones to a far bay
+// Goals stay axis-aligned to 0°/90° (within ALIGN_TOL) so they're always parkable;
+// variety comes from approach side, spawn heading, off-centre spawns and layout.
+const LEVELS = [
+  // ---- World: Learn to Drive ----
+  // 1 · empty bay, just drive across (left → right)
+  {nameKey:"lvl_open", worldKey:"world_basics", emoji:"🅿️", lives:4,
+    spawn:{x:18, y:35, heading:0},
+    goal:{x:82, y:35, w:18, h:11, heading:0},
+    obstacles:[]},
+
+  // 2 · turn-in: come from the left, swing down into a bay, one neighbour
+  {nameKey:"lvl_pullin", worldKey:"world_basics", emoji:"🚘", lives:4,
+    spawn:{x:16, y:20, heading:0},
+    goal:{x:48, y:50, w:14, h:18, heading:90},
+    obstacles:[
+      {x:66, y:52, w:13, h:22, kind:"car"},     // single neighbour to the right
+    ]},
+
+  // 3 · straight-in, very wide gap (centred)
+  {nameKey:"lvl_wide", worldKey:"world_basics", emoji:"🚦", lives:4,
+    spawn:{x:50, y:14, heading:90},
+    goal:{x:50, y:52, w:14, h:18, heading:90},
+    obstacles:[
+      {x:27, y:54, w:13, h:22, kind:"car"},     // gap ≈ 33
+      {x:73, y:54, w:13, h:22, kind:"car"},
+    ]},
+
+  // 4 · parallel, roomy curbside slot (from the left)
+  {nameKey:"lvl_parallel", worldKey:"world_basics", emoji:"↔️", lives:3,
+    spawn:{x:20, y:18, heading:0},
+    goal:{x:50, y:52, w:22, h:12, heading:0},
+    obstacles:[
+      {x:20, y:53, w:20, h:12, kind:"car"},     // gap ≈ 40
+      {x:80, y:53, w:20, h:12, kind:"car"},
+      {x:50, y:66, w:100, h:8, kind:"wall"},    // curb
+    ]},
+
+  // ---- World: Real Parking ----
+  // 5 · navigate: from the right, weave around a wall up to a top-left bay
+  {nameKey:"lvl_corner", worldKey:"world_real", emoji:"🚥", lives:3,
+    spawn:{x:82, y:52, heading:180},
+    goal:{x:20, y:24, w:18, h:11, heading:0},
+    obstacles:[
+      {x:50, y:46, w:12, h:30, kind:"wall"},    // low-centre wall — stay high
+      {x:20, y:44, w:22, h:12, kind:"car"},     // parked car under the bay
+    ]},
+
+  // 6 · straight-in, medium gap, but spawn off to the side (must steer over)
+  {nameKey:"lvl_between", worldKey:"world_real", emoji:"🚙", lives:3,
+    spawn:{x:34, y:14, heading:90},
+    goal:{x:50, y:52, w:13, h:18, heading:90},
+    obstacles:[
+      {x:31, y:54, w:13, h:22, kind:"car"},     // gap ≈ 25
+      {x:69, y:54, w:13, h:22, kind:"car"},
+    ]},
+
+  // 7 · parallel, tighter, approached from the right
+  {nameKey:"lvl_parallel2", worldKey:"world_real", emoji:"🔁", lives:3,
+    spawn:{x:82, y:18, heading:180},
+    goal:{x:50, y:52, w:20, h:12, heading:0},
+    obstacles:[
+      {x:25, y:53, w:20, h:12, kind:"car"},     // gap ≈ 30
+      {x:75, y:53, w:20, h:12, kind:"car"},
+      {x:50, y:66, w:100, h:8, kind:"wall"},
+    ]},
+
+  // 8 · navigate around a wall + cone to a far bay
+  {nameKey:"lvl_lot", worldKey:"world_real", emoji:"🚧", lives:3,
+    spawn:{x:14, y:14, heading:90},
+    goal:{x:84, y:54, w:18, h:11, heading:0},
+    obstacles:[
+      {x:40, y:30, w:10, h:34, kind:"wall"},
+      {x:66, y:18, w:8, h:8, kind:"cone"},
+      {x:62, y:54, w:13, h:20, kind:"car"},
+    ]},
+
+  // ---- World: Lot Master ----
+  // 9 · straight-in, snug gap, spawn off to the right
+  {nameKey:"lvl_snug", worldKey:"world_master", emoji:"🚐", lives:2,
+    spawn:{x:62, y:14, heading:90},
+    goal:{x:50, y:52, w:12, h:18, heading:90},
+    obstacles:[
+      {x:34, y:54, w:13, h:22, kind:"car"},     // gap ≈ 19
+      {x:66, y:54, w:13, h:22, kind:"car"},
+    ]},
+
+  // 10 · navigate: drive over the top of a wall, then down into the bay
+  {nameKey:"lvl_drive", worldKey:"world_master", emoji:"🛣️", lives:2,
+    spawn:{x:14, y:16, heading:0},
+    goal:{x:84, y:52, w:18, h:11, heading:0},
+    obstacles:[
+      {x:44, y:34, w:9, h:24, kind:"wall"},
+      {x:66, y:53, w:13, h:20, kind:"car"},
+    ]},
+
+  // 11 · parallel, tight slot (from the left)
+  {nameKey:"lvl_squeeze", worldKey:"world_master", emoji:"🤏", lives:2,
+    spawn:{x:18, y:18, heading:0},
+    goal:{x:50, y:52, w:17, h:12, heading:0},
+    obstacles:[
+      {x:29, y:53, w:20, h:12, kind:"car"},     // gap ≈ 22
+      {x:71, y:53, w:20, h:12, kind:"car"},
+      {x:50, y:66, w:100, h:8, kind:"wall"},
+    ]},
+
+  // 12 · navigate: two-turn slalom through staggered walls
+  {nameKey:"lvl_maze", worldKey:"world_master", emoji:"🏁", lives:2,
+    spawn:{x:14, y:55, heading:-90},
+    goal:{x:84, y:14, w:18, h:11, heading:0},
+    obstacles:[
+      {x:34, y:40, w:10, h:60, kind:"wall"},    // gap at the top
+      {x:66, y:30, w:10, h:60, kind:"wall"},    // gap at the bottom
+    ]},
+
+  // 13 · finale: tightest gap of all, off-centre spawn, cones flanking the entry
+  {nameKey:"lvl_expert", worldKey:"world_master", emoji:"🏆", lives:1,
+    spawn:{x:38, y:14, heading:90},
+    goal:{x:50, y:52, w:9, h:18, heading:90},
+    obstacles:[
+      {x:39, y:54, w:12, h:22, kind:"car"},     // gap ≈ 10
+      {x:61, y:54, w:12, h:22, kind:"car"},
+      {x:31, y:30, w:6, h:6, kind:"cone"},
+      {x:69, y:30, w:6, h:6, kind:"cone"},
+    ]},
+];
+
+// ----- String table (i18n). Add a language by adding another block. -----
+const I18N = {
+  en:{
+    dir:"ltr", langName:"עברית", langPill:"🇬🇧 EN",
+    title:"Park the Car",
+    tagline:"Steer into the spot without bumping!",
+    play:"▶ Play",
+    sound:"Sound",
+    reset:"Reset progress",
+    pickLevel:"Pick a Spot",
+    pickSub:"your parking adventure",
+    back:"Back",
+    hint:"Park without crashing!",
+    parking:"Parking",
+    level:"Level",
+    lives:"Lives",
+    aligning:"Line it up…",
+    nearlyParked:"Almost there!",
+    parked:"Parked!",
+    allDone:"Parking Champion! 🏆",
+    crash:"Bump! Try again",
+    perfect:"Clean parking!",
+    bump_one:"1 bump",
+    bump_many:"bumps",
+    next:"Next ▶",
+    replay:"↻ Replay",
+    map:"🏠 Map",
+    resetConfirm:"Start over? This clears all stars in both languages.",
+    resetDone:"Progress reset! 🧹",
+    world_basics:"Learn to Drive", world_real:"Real Parking", world_master:"Lot Master",
+    lvl_open:"Open Spot", lvl_pullin:"Pull-In", lvl_wide:"Wide Bay", lvl_between:"Between Cars",
+    lvl_snug:"Snug Fit", lvl_parallel:"Parallel Park", lvl_parallel2:"Parallel Again",
+    lvl_corner:"Corner Lot", lvl_lot:"Parking Lot", lvl_drive:"Drive & Park",
+    lvl_squeeze:"Squeeze In", lvl_maze:"Garage Maze", lvl_expert:"Expert Park",
+  },
+  he:{
+    dir:"rtl", langName:"English", langPill:"🇮🇱 עב",
+    title:"חנו את המכונית",
+    tagline:"היגוי אל החניה בלי להתנגש!",
+    play:"▶ שחקו",
+    sound:"צליל",
+    reset:"איפוס התקדמות",
+    pickLevel:"בחרו חניה",
+    pickSub:"הרפתקת החניה שלך",
+    back:"חזרה",
+    hint:"חנו בלי להתנגש!",
+    parking:"חניה",
+    level:"שלב",
+    lives:"חיים",
+    aligning:"מיישרים…",
+    nearlyParked:"כמעט שם!",
+    parked:"חנינו!",
+    allDone:"אלופי החניה! 🏆",
+    crash:"בּוּם! נסו שוב",
+    perfect:"חניה מושלמת!",
+    bump_one:"התנגשות אחת",
+    bump_many:"התנגשויות",
+    next:"הבא ◀",
+    replay:"שוב ↻",
+    map:"🏠 מפה",
+    resetConfirm:"להתחיל מחדש? כל הכוכבים בשתי השפות יימחקו.",
+    resetDone:"ההתקדמות אופסה! 🧹",
+    world_basics:"לומדים לנהוג", world_real:"חניה אמיתית", world_master:"אלוף המגרש",
+    lvl_open:"חניה פתוחה", lvl_pullin:"כניסה לחניה", lvl_wide:"חניה רחבה", lvl_between:"בין מכוניות",
+    lvl_snug:"חניה צמודה", lvl_parallel:"חניה במקביל", lvl_parallel2:"שוב במקביל",
+    lvl_corner:"חניית פינה", lvl_lot:"מגרש חניה", lvl_drive:"נסיעה וחניה",
+    lvl_squeeze:"להידחק פנימה", lvl_maze:"מבוך החניון", lvl_expert:"חניית מומחה",
+  },
+};
+const DEFAULT_LANG = "he";
+
+function t(key){
+  const L = I18N[save.lang] || I18N[DEFAULT_LANG];
+  if(L && L[key]!=null) return L[key];
+  if(I18N.en[key]!=null) return I18N.en[key];
+  return key;
+}
+function bumpsText(m){ return m===0 ? t("perfect") : (m===1 ? t("bump_one") : m+" "+t("bump_many")); }
+
+// =========================================================
+//  Persistent save (progress tracked separately per language)
+// =========================================================
+const SAVE_KEY = "parkTheCar.save";
+const DEFAULT_SAVE = {
+  lang:DEFAULT_LANG, muted:false,
+  progress:{ he:{unlockedLevel:0, starsByLevel:{}}, en:{unlockedLevel:0, starsByLevel:{}} },
+};
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const s = {...DEFAULT_SAVE, ...parsed};
+    s.progress = {...DEFAULT_SAVE.progress, ...(parsed.progress||{})};
+    for(const lng of ["he","en"]){
+      s.progress[lng] = {unlockedLevel:0, starsByLevel:{}, ...(s.progress[lng]||{})};
+    }
+    if(!I18N[s.lang]) s.lang = DEFAULT_LANG;
+    return s;
+  }catch(e){ return JSON.parse(JSON.stringify(DEFAULT_SAVE)); }
+}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+let save = loadSave();
+function prog(){ return save.progress[save.lang]; }   // progress for the current language
+
+// =========================================================
+//  Helpers
+// =========================================================
+const $ = sel => document.querySelector(sel);
+const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const DEG = Math.PI/180;
+
+// =========================================================
+//  Sound (tiny Web Audio cues — no files)
+// =========================================================
+let audioCtx = null;
+function beep(freq, start, dur, type="sine", gain=0.15){
+  if(save.muted) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime + start;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(gain, t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0+dur);
+  }catch(e){}
+}
+// short filtered-noise burst — the metal "crash" thud
+function noiseBurst(dur=0.22, gain=0.18, lp=900){
+  if(save.muted) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime;
+    const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate*dur), audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 2); }
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const filt = audioCtx.createBiquadFilter(); filt.type="lowpass"; filt.frequency.value = lp;
+    const g = audioCtx.createGain(); g.gain.value = gain;
+    src.connect(filt); filt.connect(g); g.connect(audioCtx.destination);
+    src.start(t0);
+  }catch(e){}
+}
+// a soft looping-ish engine rumble while driving (retriggered, gated by a cooldown)
+let lastEngine = 0;
+function engineSound(){
+  if(save.muted) return;
+  const now = performance.now();
+  if(now - lastEngine < 130) return;   // don't spam an oscillator every frame
+  lastEngine = now;
+  beep(90 + Math.random()*30, 0, .12, "sawtooth", .04);
+}
+function playSound(type){
+  if(type==="crash"){ noiseBurst(.24,.2,800); beep(150,0,.18,"square",.12); beep(90,.05,.2,"sawtooth",.1); }
+  else if(type==="win"){ [523,659,784,1046].forEach((f,i)=>beep(f,i*.12,.25,"triangle")); }
+  else if(type==="park"){ beep(660,0,.13,"triangle"); beep(990,.1,.2,"triangle"); }
+  else if(type==="tap"){ beep(440,0,.05,"square",.06); }
+}
+
+// =========================================================
+//  Screen navigation
+// =========================================================
+let currentScreen = "title";
+function showScreen(name){
+  if(name!=="play") stopGame();   // leaving play tears the loop down
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("#screen-"+name).classList.add("active");
+  currentScreen = name;
+  if(name==="select") renderSelect();
+}
+
+// =========================================================
+//  Level select
+// =========================================================
+function renderSelect(){
+  $("#lang-pill-select").textContent = t("langPill");
+  const grid = $("#levels-grid");
+  grid.innerHTML = "";
+  const p = prog();
+  let lastWorld = null;
+  LEVELS.forEach((lv,i)=>{
+    if(lv.worldKey!==lastWorld){
+      lastWorld = lv.worldKey;
+      const wl = document.createElement("div");
+      wl.className = "world-label";
+      wl.textContent = t(lv.worldKey);
+      grid.appendChild(wl);
+    }
+    const locked = i > p.unlockedLevel;
+    const stars = p.starsByLevel[i]||0;
+    const card = document.createElement("div");
+    card.className = "level-card"+(locked?" locked":"");
+    card.innerHTML = `
+      <div class="lc-emoji">${locked?"🔒":lv.emoji}</div>
+      <div class="lc-name">${t(lv.nameKey)}</div>
+      <div class="lc-sub">${"❤️".repeat(lv.lives)}</div>
+      <div class="lc-stars">${starString(stars)}</div>`;
+    if(!locked) card.addEventListener("click",()=>startLevel(i));
+    grid.appendChild(card);
+  });
+}
+function starString(n){ return "★★★".slice(0,n).padEnd(3,"☆"); }
+
+// =========================================================
+//  Game state + loop
+// =========================================================
+const game = {
+  levelIndex:0,
+  lives:3,
+  bumps:0,           // total bumps this attempt (drives the star rating)
+  car:{x:0,y:0,heading:0,v:0},  // position (units), heading (deg), speed (units/sec)
+  rafId:null,
+  running:false,
+  completed:false,
+  parkHold:0,        // ms the car has rested aligned inside the goal
+};
+// Held-input flags — set by BOTH the keyboard and the touch pedals.
+const input = {up:false, down:false, left:false, right:false};
+
+// ----- Tunables (gentle, forgiving physics for young kids) -----
+const ACCEL   = 26;    // units/sec^2 added by the gas/reverse
+const MAX_FWD = 22;    // top forward speed (units/sec)
+const MAX_REV = 14;    // top reverse speed
+const FRICTION= 18;    // speed decay toward 0 (units/sec^2)
+const TURN    = 150;   // deg/sec of heading change at full speed
+const ALIGN_TOL = 14;  // heading tolerance (deg) to count as "aligned" to the bay
+const PARK_HOLD_MS = 450; // must rest aligned & inside this long to win
+
+// the arena element & its pixel size (refreshed when the level starts)
+let arenaEl = null, scale = 1, offX = 0, offY = 0;
+
+function startLevel(i){ beginRun(i); }
+
+function beginRun(i){
+  game.levelIndex = i;
+  game.completed = false;
+  game.bumps = 0;
+  const lv = LEVELS[i];
+  game.lives = lv.lives;
+
+  buildScene(lv);
+  resetCar();                       // car to spawn pose, speed 0
+
+  $("#play-level").innerHTML = `${t(lv.nameKey)}<small>${t("parking")}</small>`;
+  $("#hint").textContent = t("hint");
+  $("#hint").style.display = "";
+  updateLivesUI();
+  $("#park-status").textContent = "";
+
+  showScreen("play");
+  measureArena();
+  layoutScene();                    // place goal glow + car now that we have pixels
+
+  input.up=input.down=input.left=input.right=false;
+  game.running = true;
+  game.lastTs = performance.now();
+  game.rafId = requestAnimationFrame(loop);
+}
+
+function resetCar(){
+  const lv = LEVELS[game.levelIndex];
+  game.car.x = lv.spawn.x;
+  game.car.y = lv.spawn.y;
+  game.car.heading = lv.spawn.heading;
+  game.car.v = 0;
+  game.parkHold = 0;
+}
+
+function stopGame(){
+  game.running = false;
+  if(game.rafId){ cancelAnimationFrame(game.rafId); game.rafId = null; }
+}
+
+// ---- pixel mapping: arena units (0..FW, 0..FH) -> pixels ----
+function measureArena(){
+  arenaEl = $("#arena");
+  const w = arenaEl.clientWidth, h = arenaEl.clientHeight;
+  // uniform scale that fills the arena (units are designed at FW x FH aspect)
+  scale = Math.min(w/FW, h/FH);
+  // center the field if the arena aspect doesn't match exactly
+  offX = (w - FW*scale)/2;
+  offY = (h - FH*scale)/2;
+}
+const px = (ux)=> offX + ux*scale;
+const py = (uy)=> offY + uy*scale;
+
+// =========================================================
+//  Scene building (inline SVG lot + parked cars + greenery)
+// =========================================================
+const CAR_COLORS = ["#e2574c","#f0a93b","#5fbf6a","#9b6bff","#3aa0e0","#ff8fab","#46c2b0"];
+
+function buildScene(lv){
+  const arena = $("#arena");
+  // remove anything we previously injected (keep the static .hint node)
+  arena.querySelectorAll(".scene,.goal-glow,.car,.cloud-shadow,.puff,.boom").forEach(n=>n.remove());
+
+  // ----- background SVG: grass border, asphalt, lane markings, painted bay, scenery -----
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class","scene");
+  svg.setAttribute("viewBox", `0 0 ${FW} ${FH}`);
+  svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+
+  let inner = `
+    <defs>
+      <linearGradient id="asph" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#6c7682"/><stop offset="1" stop-color="#586069"/>
+      </linearGradient>
+    </defs>
+    <!-- grass surround -->
+    <rect x="0" y="0" width="${FW}" height="${FH}" fill="#8fd36b"/>
+    <rect x="0" y="0" width="${FW}" height="${FH}" fill="url(#g-dots)"/>
+    <!-- asphalt lot -->
+    <rect x="6" y="5" width="${FW-12}" height="${FH-10}" rx="3" fill="url(#asph)"/>
+    <!-- faint lot seams -->
+    <g stroke="#4f5862" stroke-width=".3" opacity=".5">
+      <line x1="6" y1="${FH/2}" x2="${FW-6}" y2="${FH/2}"/>
+    </g>
+    <!-- dashed centre lane -->
+    <g stroke="#ffd166" stroke-width=".9" stroke-dasharray="3 3" opacity=".85">
+      <line x1="8" y1="${FH/2}" x2="${FW-8}" y2="${FH/2}"/>
+    </g>`;
+
+  // painted bay lines around the goal (so the target reads as a real parking bay)
+  const g = lv.goal;
+  inner += paintBay(g);
+
+  // greenery + streetlights along the grass border
+  inner += sceneryDecor();
+
+  // parked cars / walls / cones
+  lv.obstacles.forEach((o,idx)=>{
+    if(o.kind==="car"){
+      inner += parkedCarSVG(o, CAR_COLORS[idx % CAR_COLORS.length]);
+    }else if(o.kind==="cone"){
+      inner += coneSVG(o);
+    }else{ // wall / curb
+      inner += `<g>
+        <rect x="${o.x-o.w/2}" y="${o.y-o.h/2}" width="${o.w}" height="${o.h}" rx="1.2" fill="#b9885a" stroke="#9a6c44" stroke-width=".5"/>
+        <rect x="${o.x-o.w/2}" y="${o.y-o.h/2}" width="${o.w}" height="1.4" fill="#cda06f"/>
+      </g>`;
+    }
+  });
+
+  svg.innerHTML = `
+    <defs>
+      <pattern id="g-dots" width="6" height="6" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2" r=".7" fill="#7bc457"/><circle cx="5" cy="5" r=".6" fill="#7bc457"/>
+      </pattern>
+    </defs>` + inner;
+
+  arena.insertBefore(svg, arena.firstChild);
+
+  // ambient drifting cloud shadow
+  const cloud = document.createElement("div");
+  cloud.className = "cloud-shadow";
+  arena.insertBefore(cloud, $("#hint"));
+
+  // ----- goal glow (positioned in layoutScene) -----
+  const glow = document.createElement("div");
+  glow.className = "goal-glow";
+  glow.id = "goal-glow";
+  arena.insertBefore(glow, $("#hint"));
+
+  // ----- hero car -----
+  const car = document.createElement("div");
+  car.className = "car";
+  car.id = "car";
+  car.innerHTML = heroCarSVG();
+  arena.insertBefore(car, $("#hint"));
+}
+
+// A painted parking-bay outline + a big "P" so the target is obvious.
+function paintBay(g){
+  const x=g.x-g.w/2, y=g.y-g.h/2;
+  return `<g opacity=".95">
+    <rect x="${x}" y="${y}" width="${g.w}" height="${g.h}" fill="rgba(255,255,255,.06)"/>
+    <line x1="${x}" y1="${y}" x2="${x}" y2="${y+g.h}" stroke="#fff" stroke-width=".8"/>
+    <line x1="${x+g.w}" y1="${y}" x2="${x+g.w}" y2="${y+g.h}" stroke="#fff" stroke-width=".8"/>
+    <line x1="${x}" y1="${y}" x2="${x+g.w}" y2="${y}" stroke="#fff" stroke-width=".8"/>
+    <line x1="${x}" y1="${y+g.h}" x2="${x+g.w}" y2="${y+g.h}" stroke="#fff" stroke-width=".8"/>
+    <text x="${g.x}" y="${g.y}" fill="#ffffff" opacity=".55" font-size="${Math.min(g.w,g.h)*0.7}"
+      font-family="Arial" font-weight="bold" text-anchor="middle" dominant-baseline="central">P</text>
+  </g>`;
+}
+
+// A cute top-down parked car as an obstacle.
+function parkedCarSVG(o, color){
+  const x=o.x-o.w/2, y=o.y-o.h/2;
+  return `<g>
+    <rect x="${x+ .6}" y="${y+ .8}" width="${o.w}" height="${o.h}" rx="2" fill="rgba(0,0,0,.22)"/>
+    <rect x="${x}" y="${y}" width="${o.w}" height="${o.h}" rx="2" fill="${color}" stroke="rgba(0,0,0,.25)" stroke-width=".4"/>
+    <rect x="${x+o.w*0.18}" y="${y+o.h*0.18}" width="${o.w*0.64}" height="${o.h*0.64}" rx="1.4" fill="rgba(255,255,255,.32)"/>
+    <rect x="${x+o.w*0.30}" y="${y+o.h*0.28}" width="${o.w*0.40}" height="${o.h*0.44}" rx="1" fill="rgba(0,0,0,.18)"/>
+  </g>`;
+}
+
+// A traffic cone (drawn as a small diamond-ish marker).
+function coneSVG(o){
+  return `<g>
+    <circle cx="${o.x}" cy="${o.y+o.h*0.35}" r="${o.w*0.5}" fill="rgba(0,0,0,.18)"/>
+    <polygon points="${o.x},${o.y-o.h/2} ${o.x+o.w/2},${o.y+o.h/2} ${o.x-o.w/2},${o.y+o.h/2}"
+      fill="#ff7a33" stroke="#e2602a" stroke-width=".4"/>
+    <rect x="${o.x-o.w*0.36}" y="${o.y-o.h*0.04}" width="${o.w*0.72}" height="${o.h*0.22}" fill="#fff" opacity=".85"/>
+  </g>`;
+}
+
+// Trees, bushes and streetlights tucked into the grass border (decoration only).
+function sceneryDecor(){
+  const tree = (cx,cy,r)=>`<g>
+    <ellipse cx="${cx}" cy="${cy+r*0.7}" rx="${r}" ry="${r*0.35}" fill="rgba(0,0,0,.15)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="#5fa83f"/>
+    <circle cx="${cx-r*0.5}" cy="${cy+r*0.2}" r="${r*0.7}" fill="#6fbd4c"/>
+    <circle cx="${cx+r*0.5}" cy="${cy+r*0.2}" r="${r*0.7}" fill="#6fbd4c"/>
+  </g>`;
+  const lamp = (cx,cy)=>`<g>
+    <rect x="${cx-0.4}" y="${cy-5}" width="0.8" height="5" fill="#6b7280"/>
+    <circle cx="${cx}" cy="${cy-5.4}" r="1.3" fill="#ffe08a" stroke="#caa44a" stroke-width=".3"/>
+  </g>`;
+  return `<g opacity=".95">
+    ${tree(3, 8, 3.2)} ${tree(3, 60, 3)} ${tree(97, 12, 3)} ${tree(97, 58, 3.2)}
+    ${lamp(50, 5)} ${lamp(15, 65)} ${lamp(85, 65)}
+  </g>`;
+}
+
+// Hero car: cute top-down body pointing RIGHT (+x), so heading 0 = no rotation.
+// width 14 x height 7 in the SVG's own pixel space; CSS sizes it from the arena.
+function heroCarSVG(){
+  return `<svg viewBox="0 0 140 70" aria-label="car">
+    <!-- body -->
+    <rect x="6" y="10" width="128" height="50" rx="16" fill="#ffd23f" stroke="#caa11f" stroke-width="3"/>
+    <!-- windows / cabin -->
+    <rect x="44" y="16" width="60" height="38" rx="10" fill="#bfe3ff" stroke="#8fc7ef" stroke-width="2"/>
+    <rect x="74" y="18" width="28" height="34" rx="8" fill="#dff0ff"/>
+    <!-- wheels -->
+    <rect x="20" y="2" width="20" height="10" rx="4" fill="#333a44"/>
+    <rect x="20" y="58" width="20" height="10" rx="4" fill="#333a44"/>
+    <rect x="98" y="2" width="20" height="10" rx="4" fill="#333a44"/>
+    <rect x="98" y="58" width="20" height="10" rx="4" fill="#333a44"/>
+    <!-- headlights (front = right) -->
+    <g class="head"><circle cx="128" cy="22" r="4.5" fill="#fff7cf"/><circle cx="128" cy="48" r="4.5" fill="#fff7cf"/></g>
+    <!-- brake lights (back = left), shown when reversing -->
+    <g class="brake"><circle cx="12" cy="22" r="4.5" fill="#ff5a5a"/><circle cx="12" cy="48" r="4.5" fill="#ff5a5a"/></g>
+  </svg>`;
+}
+
+// Place the goal glow + size/position the car. Called after measureArena().
+function layoutScene(){
+  const lv = LEVELS[game.levelIndex];
+  const g = lv.goal;
+  const glow = $("#goal-glow");
+  glow.style.left   = px(g.x-g.w/2) + "px";
+  glow.style.top    = py(g.y-g.h/2) + "px";
+  glow.style.width  = (g.w*scale) + "px";
+  glow.style.height = (g.h*scale) + "px";
+
+  const car = $("#car");
+  car.style.width = (CAR_W*scale) + "px";   // height follows the SVG aspect (14:7)
+  renderCar();
+}
+
+// =========================================================
+//  Main loop + physics (simple bicycle/kinematic model)
+// =========================================================
+function loop(ts){
+  if(!game.running) return;
+  const dt = Math.min(50, ts - game.lastTs) / 1000;  // seconds, clamped after a tab pause
+  game.lastTs = ts;
+  update(dt);
+  game.rafId = requestAnimationFrame(loop);
+}
+
+function update(dt){
+  const c = game.car;
+
+  // ---- longitudinal: gas / reverse / friction ----
+  if(input.up)        c.v += ACCEL*dt;
+  else if(input.down) c.v -= ACCEL*dt;
+  else {
+    // coast: friction pulls speed toward 0
+    const f = FRICTION*dt;
+    if(c.v > 0) c.v = Math.max(0, c.v - f);
+    else if(c.v < 0) c.v = Math.min(0, c.v + f);
+  }
+  c.v = clamp(c.v, -MAX_REV, MAX_FWD);
+
+  // ---- steering: heading changes ONLY while moving, scaled by speed ----
+  // (like a real car — the wheel does nothing when stopped)
+  const speedFrac = clamp(Math.abs(c.v)/MAX_FWD, 0, 1);
+  if(Math.abs(c.v) > 0.4){
+    const dir = c.v >= 0 ? 1 : -1;   // reversing flips the steering, as in a real car
+    if(input.left)  c.heading -= TURN*speedFrac*dt*dir;
+    if(input.right) c.heading += TURN*speedFrac*dt*dir;
+  }
+
+  // engine puff + sound while actually moving
+  if(Math.abs(c.v) > 1){
+    engineSound();
+    if(Math.random() < 0.18) spawnPuff();
+  }
+
+  // ---- integrate position ----
+  const rad = c.heading*DEG;
+  const nx = c.x + Math.cos(rad)*c.v*dt;
+  const ny = c.y + Math.sin(rad)*c.v*dt;
+
+  // ---- collision test at the new pose ----
+  const corners = carCorners(nx, ny, c.heading);
+  if(hitsAnything(corners)){
+    crash();
+    return;        // crash() resets the car; skip the rest of this frame
+  }
+
+  c.x = nx; c.y = ny;
+
+  $("#car").classList.toggle("reversing", c.v < -0.4);
+  renderCar();
+  updateParkState(dt);
+}
+
+// Place + rotate the car element from its unit pose.
+function renderCar(){
+  const c = game.car;
+  const car = $("#car");
+  // size in px (kept in sync in case the arena resized)
+  const wpx = CAR_W*scale;
+  const hpx = CAR_H*scale;
+  car.style.left = (px(c.x) - wpx/2) + "px";
+  car.style.top  = (py(c.y) - hpx/2) + "px";
+  car.style.transform = `rotate(${c.heading}deg)`;
+}
+
+// Four corners of the oriented car rectangle, in arena units.
+function carCorners(x, y, headingDeg){
+  const rad = headingDeg*DEG;
+  const ca = Math.cos(rad), sa = Math.sin(rad);
+  const hw = CAR_HIT_W/2, hh = CAR_HIT_H/2;
+  const local = [[ hw,  hh], [ hw, -hh], [-hw, -hh], [-hw,  hh]];
+  return local.map(([lx,ly]) => ({
+    x: x + lx*ca - ly*sa,
+    y: y + lx*sa + ly*ca,
+  }));
+}
+
+// True if any car corner is outside the asphalt or inside an obstacle rect.
+function hitsAnything(corners){
+  // arena bounds: the asphalt is inset 6 (x) / 5 (y) units from the field edge
+  for(const p of corners){
+    if(p.x < 6 || p.x > FW-6 || p.y < 5 || p.y > FH-5) return true;
+  }
+  // obstacles (axis-aligned rectangles) — corner-in-rect OR edge cross.
+  const lv = LEVELS[game.levelIndex];
+  for(const o of lv.obstacles){
+    if(rectHitsCar(o, corners)) return true;
+  }
+  return false;
+}
+
+// Robust enough overlap test: any car corner inside the obstacle, OR any
+// obstacle corner inside the car polygon (catches the "spanning" case).
+function rectHitsCar(o, corners){
+  const ox1=o.x-o.w/2, oy1=o.y-o.h/2, ox2=o.x+o.w/2, oy2=o.y+o.h/2;
+  for(const p of corners){
+    if(p.x>=ox1 && p.x<=ox2 && p.y>=oy1 && p.y<=oy2) return true;
+  }
+  const oCorners = [{x:ox1,y:oy1},{x:ox2,y:oy1},{x:ox2,y:oy2},{x:ox1,y:oy2}];
+  for(const q of oCorners){
+    if(pointInPoly(q, corners)) return true;
+  }
+  return false;
+}
+
+function pointInPoly(pt, poly){
+  let inside = false;
+  for(let i=0, j=poly.length-1; i<poly.length; j=i++){
+    const xi=poly[i].x, yi=poly[i].y, xj=poly[j].x, yj=poly[j].y;
+    const intersect = ((yi>pt.y)!==(yj>pt.y)) &&
+      (pt.x < (xj-xi)*(pt.y-yi)/(yj-yi) + xi);
+    if(intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// =========================================================
+//  Crash handling
+// =========================================================
+function crash(){
+  const c = game.car;
+  spawnBoom(c.x, c.y);
+  playSound("crash");
+  arenaEl.classList.remove("shake"); void arenaEl.offsetWidth; arenaEl.classList.add("shake");
+  game.bumps++;
+  game.lives--;
+  game.parkHold = 0;
+
+  if(game.lives <= 0){
+    // out of lives — reset lives and start the level over (still gentle)
+    game.lives = LEVELS[game.levelIndex].lives;
+    $("#park-status").textContent = "";
+  }
+  updateLivesUI();
+  $("#hint").style.display = "";
+  resetCar();
+  renderCar();
+}
+
+// =========================================================
+//  Parking / win detection
+// =========================================================
+function updateParkState(dt){
+  const lv = LEVELS[game.levelIndex];
+  const g = lv.goal;
+  const c = game.car;
+
+  // car (mostly) inside the bay?  test its four corners with a small margin.
+  const corners = carCorners(c.x, c.y, c.heading);
+  const margin = 1.2;   // units of slack so it's forgiving
+  let allIn = true;
+  for(const p of corners){
+    if(p.x < g.x-g.w/2-margin || p.x > g.x+g.w/2+margin ||
+       p.y < g.y-g.h/2-margin || p.y > g.y+g.h/2+margin){ allIn=false; break; }
+  }
+
+  // heading aligned to the bay (allow 180° flip — parked either way is fine)
+  const aligned = headingAligned(c.heading, g.heading);
+  const slow = Math.abs(c.v) < 2.2;
+
+  const glow = $("#goal-glow");
+  const good = allIn && aligned;
+  glow.classList.toggle("aligned", good);
+
+  if(good && slow){
+    game.parkHold += dt*1000;
+    $("#hint").style.display = "none";
+    $("#park-status").textContent = t("nearlyParked");
+    if(game.parkHold >= PARK_HOLD_MS){ winLevel(); }
+  }else{
+    game.parkHold = 0;
+    if(allIn && !aligned){ $("#park-status").textContent = t("aligning"); }
+    else { $("#park-status").textContent = ""; }
+  }
+}
+
+// Heading within tolerance of the target OR its 180° opposite.
+function headingAligned(h, target){
+  const diff = a => { let d = ((h - a) % 360 + 540) % 360 - 180; return Math.abs(d); };
+  return diff(target) <= ALIGN_TOL || diff(target+180) <= ALIGN_TOL;
+}
+
+// =========================================================
+//  Win + complete screen
+// =========================================================
+function winLevel(){
+  if(game.completed) return;
+  game.completed = true;
+  game.running = false;
+
+  const i = game.levelIndex;
+  const m = game.bumps;
+  const stars = m===0 ? 3 : (m<=2 ? 2 : 1);
+
+  const p = prog();
+  p.starsByLevel[i] = Math.max(p.starsByLevel[i]||0, stars);
+  if(i+1 <= LEVELS.length-1) p.unlockedLevel = Math.max(p.unlockedLevel, i+1);
+  persist();
+
+  playSound("park");
+  setTimeout(()=>{
+    stopGame();
+    const isLast = i >= LEVELS.length-1;
+    $("#complete-emoji").textContent = isLast ? "🏆" : "🎉";
+    $("#complete-title").textContent = isLast ? t("allDone") : t("parked");
+    $("#complete-reward").textContent = bumpsText(m);
+
+    const starEls = document.querySelectorAll("#complete-stars .s");
+    starEls.forEach(s=>s.classList.remove("on"));
+    showScreen("complete");
+    starEls.forEach((s,idx)=>{
+      setTimeout(()=>{ if(idx<stars){ s.classList.add("on"); playSound("tap"); } }, 300+idx*250);
+    });
+
+    const nextBtn = $("#next-btn");
+    if(isLast){ nextBtn.textContent = t("map"); nextBtn.onclick = ()=>showScreen("select"); }
+    else { nextBtn.textContent = t("next"); nextBtn.onclick = ()=>startLevel(i+1); }
+    $("#replay-btn").onclick = ()=>startLevel(i);
+
+    playSound("win");
+    confetti();
+  }, 420);
+}
+
+// =========================================================
+//  Visual FX
+// =========================================================
+function spawnPuff(){
+  if(!arenaEl) return;
+  const c = game.car;
+  // place the puff at the rear of the car (opposite the heading)
+  const rad = c.heading*DEG;
+  const rx = c.x - Math.cos(rad)*(CAR_W/2+1);
+  const ry = c.y - Math.sin(rad)*(CAR_W/2+1);
+  const p = document.createElement("div");
+  p.className = "puff";
+  p.style.left = (px(rx)-8) + "px";
+  p.style.top  = (py(ry)-8) + "px";
+  arenaEl.insertBefore(p, $("#hint"));
+  setTimeout(()=>p.remove(), 700);
+}
+function spawnBoom(ux, uy){
+  if(!arenaEl) return;
+  const b = document.createElement("div");
+  b.className = "boom";
+  b.textContent = "💥";
+  b.style.left = px(ux) + "px";
+  b.style.top  = py(uy) + "px";
+  arenaEl.insertBefore(b, $("#hint"));
+  setTimeout(()=>b.remove(), 650);
+}
+function confetti(){
+  const fx = $("#fx");
+  const emojis = ["🎉","✨","⭐","🚗","🎊","🥳","🅿️"];
+  for(let i=0;i<40;i++){
+    const c = document.createElement("div");
+    c.className="confetti";
+    c.textContent = pick(emojis);
+    c.style.left = Math.random()*100+"vw";
+    c.style.animationDuration = (1.6+Math.random()*1.6)+"s";
+    c.style.animationDelay = (Math.random()*0.5)+"s";
+    fx.appendChild(c);
+    setTimeout(()=>c.remove(), 3600);
+  }
+}
+
+// =========================================================
+//  Lives UI
+// =========================================================
+function updateLivesUI(){
+  const lv = LEVELS[game.levelIndex];
+  const lives = Math.max(0, game.lives);
+  $("#lives").textContent = "❤️".repeat(lives) + "🤍".repeat(Math.max(0, lv.lives - lives));
+}
+
+// =========================================================
+//  Controls — keyboard + touch pedals share the SAME flags
+// =========================================================
+const KEYMAP = {
+  ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right",
+  w:"up", s:"down", a:"left", d:"right",
+  W:"up", S:"down", A:"left", D:"right",
+};
+function onKeyDown(e){
+  if(currentScreen!=="play") return;
+  const dir = KEYMAP[e.key];
+  if(!dir) return;
+  e.preventDefault();
+  input[dir] = true;
+}
+function onKeyUp(e){
+  const dir = KEYMAP[e.key];
+  if(!dir) return;
+  input[dir] = false;
+}
+
+// Touch pedals: pointer down/up/cancel/leave toggle the same input flags.
+function wirePad(){
+  document.querySelectorAll("#pad .pedal").forEach(btn=>{
+    const dir = btn.dataset.key;
+    const press = (e)=>{ e.preventDefault(); input[dir]=true; btn.classList.add("down"); };
+    const release = ()=>{ input[dir]=false; btn.classList.remove("down"); };
+    btn.addEventListener("pointerdown", press);
+    btn.addEventListener("pointerup", release);
+    btn.addEventListener("pointercancel", release);
+    btn.addEventListener("pointerleave", release);
+    // stop a held pedal from triggering text selection / context menu on long-press
+    btn.addEventListener("contextmenu", e=>e.preventDefault());
+  });
+}
+
+// =========================================================
+//  Mute + language + wiring
+// =========================================================
+function refreshMute(){
+  const icon = save.muted ? "🔇" : "🔊";
+  $("#mute-btn-title").textContent = icon;
+  $("#mute-btn-play").textContent = icon;
+}
+function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(!save.muted) playSound("tap"); }
+
+function applyLanguage(){
+  if(!I18N[save.lang]) save.lang = DEFAULT_LANG;
+  const L = I18N[save.lang];
+  document.documentElement.lang = save.lang;
+  document.documentElement.dir = L.dir;
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el=>{ el.title = t(el.dataset.i18nTitle); });
+  $("#lang-btn").textContent = L.langName;   // shows the OTHER language to switch to
+  if(currentScreen==="select") renderSelect();
+}
+function toggleLanguage(){ save.lang = (save.lang==="he"?"en":"he"); persist(); applyLanguage(); playSound("tap"); }
+
+document.addEventListener("click", e=>{
+  const go = e.target.closest("[data-go]");
+  if(go) showScreen(go.getAttribute("data-go"));
+});
+document.addEventListener("keydown", onKeyDown);
+document.addEventListener("keyup", onKeyUp);
+window.addEventListener("blur", ()=>{   // dropping focus releases all keys (avoid stuck inputs)
+  input.up=input.down=input.left=input.right=false;
+  if(game.running) game.lastTs = performance.now();
+});
+// keep the car positioned correctly if the window is resized mid-level
+window.addEventListener("resize", ()=>{
+  if(currentScreen==="play"){ measureArena(); layoutScene(); }
+});
+
+$("#play-btn").addEventListener("click", ()=>{ playSound("tap"); showScreen("select"); });
+$("#mute-btn-title").addEventListener("click", toggleMute);
+$("#mute-btn-play").addEventListener("click", toggleMute);
+$("#lang-btn").addEventListener("click", toggleLanguage);
+$("#reset-btn").addEventListener("click", ()=>{
+  if(confirm(t("resetConfirm"))){
+    const lang = save.lang;                 // keep the chosen language across a reset
+    save = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+    save.lang = lang;
+    persist(); refreshMute(); applyLanguage();
+    alert(t("resetDone"));
+  }
+});
+
+// init
+wirePad();
+refreshMute();
+applyLanguage();
+</script>
+</body>
+</html>

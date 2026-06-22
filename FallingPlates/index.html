@@ -281,6 +281,71 @@
   #fx{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50;}
   .confetti{position:absolute; font-size:1.6rem; animation:confetti-fall linear forwards;}
 
+  /* ---------- Intro cutscene (the cart-trips-over story) ---------- */
+  .cutscene{
+    position:fixed; inset:0; z-index:60; display:none; overflow:hidden; cursor:pointer;
+    background:linear-gradient(180deg,#f3e7d2 0%,#f7eede 58%,#efe0c6 100%);
+  }
+  .cutscene.active{display:block;}
+  .cutscene.leaving{animation:csFade .5s ease forwards;}
+  @keyframes csFade{to{opacity:0;}}
+  .cs-ceiling{position:absolute; left:0; right:0; top:0; height:26px;
+    background:linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,0));}
+  .cs-floor{position:absolute; left:0; right:0; bottom:0; height:70px;
+    background:repeating-linear-gradient(45deg,#e7d4b6 0 20px,#d9c19c 20px 40px);
+    border-top:6px solid #b9986a;}
+  .cs-hint{position:absolute; top:14px; left:0; right:0; text-align:center; padding:0 12px;
+    font-weight:800; color:var(--ink-soft); font-size:1.05rem; opacity:.78;}
+
+  /* everything that moves lives in the stage so it can be scaled as one unit */
+  .cs-stage{position:absolute; inset:0; transform-origin:center bottom;}
+
+  .cs-peel{position:absolute; bottom:64px; left:calc(50% + 150px); font-size:2.6rem; transform:scaleX(-1);}
+  .cs-bonk{position:absolute; bottom:200px; left:calc(50% + 120px); font-size:4rem; opacity:0; pointer-events:none;}
+  .cutscene.tripped .cs-bonk{animation:csBonk .55s ease-out;}
+  @keyframes csBonk{0%{opacity:0; transform:scale(.3) rotate(-10deg);}
+    35%{opacity:1; transform:scale(1.25) rotate(6deg);} 100%{opacity:0; transform:scale(1.5);}}
+
+  /* cook + cart travel together (forced LTR so the cart always leads, even in RTL) */
+  .cs-actor{
+    position:absolute; bottom:64px; left:-560px; direction:ltr;
+    display:flex; align-items:flex-end; gap:0; animation:csWalk 1.8s ease-in forwards;
+  }
+  .cutscene.tripped .cs-actor{animation:none; left:50%; transform:translateX(-50%);}
+  @keyframes csWalk{ from{left:-560px;} to{left:50%; transform:translateX(-50%);} }
+
+  .cs-cook{width:236px; height:auto; transform-origin:50% 90%;
+    animation:csBob .5s ease-in-out infinite;}
+  .cutscene.tripped .cs-cook{animation:csRecoil .55s ease-out forwards;}
+  @keyframes csBob{0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-6px) rotate(2deg);}}
+  @keyframes csRecoil{0%{transform:rotate(0);} 35%{transform:translate(-18px,-10px) rotate(-15deg);}
+    100%{transform:translate(-10px,0) rotate(-7deg);}}
+
+  .cs-cartwrap{position:relative; width:250px; transform-origin:86% 100%; margin-left:-8px;}
+  .cutscene.tripped .cs-cartwrap{animation:csTip .55s ease-out forwards;}
+  @keyframes csTip{0%{transform:rotate(0);} 60%{transform:rotate(26deg) translateY(6px);}
+    100%{transform:rotate(20deg) translateY(8px);}}
+  .cs-cart{width:250px; height:auto; display:block;}
+  .cs-cart .wheel{transform-origin:center; animation:csSpin .55s linear infinite;}
+  .cutscene.tripped .cs-cart .wheel{animation:none;}
+  .cs-cart .cs-load{transition:opacity .15s;}
+  .cutscene.tripped .cs-cart .cs-load{opacity:0;}   /* the stacked plates take off */
+  @keyframes csSpin{to{transform:rotate(360deg);}}
+
+  /* plates flung high above the ceiling (oval SVGs spawned by JS) */
+  .cs-flyers{position:absolute; inset:0; pointer-events:none;}
+  .csp{position:absolute; will-change:transform; animation:csFly 1.3s ease-out forwards;}
+  .csp svg{display:block; width:100%; height:auto; filter:drop-shadow(0 3px 2px rgba(0,0,0,.2));}
+  @keyframes csFly{
+    0%{transform:translate(0,0) rotate(0); opacity:1;}
+    100%{transform:translate(var(--fx,0px), var(--fy,-90vh)) rotate(var(--fr,540deg)); opacity:1;}
+  }
+
+  @media (max-width:680px){
+    .cs-stage{transform:scale(.56);}      /* shrink the whole scene to fit phones */
+    .cs-hint{font-size:.92rem;}
+  }
+
   /* ---------- Keyframes ---------- */
   @keyframes bob{0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);}}
   @keyframes pop{0%{transform:scale(.4);} 70%{transform:scale(1.15);} 100%{transform:scale(1);}}
@@ -489,6 +554,80 @@
 </div>
 <div id="fx"></div>
 
+<!-- ============ INTRO CUTSCENE: the cart trips and plates fly ============ -->
+<div id="cutscene" class="cutscene" aria-hidden="true">
+  <div class="cs-ceiling"></div>
+  <div class="cs-hint" data-i18n="csHint">…and that's why he's always catching plates!</div>
+  <div class="cs-floor"></div>
+
+  <div class="cs-stage">
+    <div class="cs-peel">🍌</div>
+    <div class="cs-bonk">💥</div>
+
+    <div class="cs-actor">
+      <svg class="cs-cook" viewBox="0 0 120 140" role="img" aria-label="Baker pushing a cart">
+        <path d="M42 96 Q28 88 23 66" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+        <path d="M78 96 Q92 88 97 66" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+        <circle cx="22" cy="63" r="8.5" fill="#f3c69b" stroke="#e0a877" stroke-width="1.5"/>
+        <circle cx="98" cy="63" r="8.5" fill="#f3c69b" stroke="#e0a877" stroke-width="1.5"/>
+        <rect x="36" y="84" width="48" height="50" rx="15" fill="#ffffff" stroke="#e2e8ee" stroke-width="2"/>
+        <path d="M50 86 L60 100 L70 86 Z" fill="#f4628a"/>
+        <g fill="#d4dde5">
+          <circle cx="53" cy="106" r="2.4"/><circle cx="53" cy="118" r="2.4"/>
+          <circle cx="67" cy="106" r="2.4"/><circle cx="67" cy="118" r="2.4"/>
+        </g>
+        <circle cx="38" cy="68" r="5" fill="#f3c69b"/>
+        <circle cx="82" cy="68" r="5" fill="#f3c69b"/>
+        <rect x="40" y="50" width="40" height="36" rx="16" fill="#f8d3aa" stroke="#e9bd8e" stroke-width="1.5"/>
+        <circle cx="48" cy="75" r="3.5" fill="#ff9d9d" opacity=".55"/>
+        <circle cx="72" cy="75" r="3.5" fill="#ff9d9d" opacity=".55"/>
+        <ellipse cx="52" cy="66" rx="3" ry="4.2" fill="#3a2e2e"/>
+        <ellipse cx="68" cy="66" rx="3" ry="4.2" fill="#3a2e2e"/>
+        <circle cx="53.2" cy="64.5" r="1" fill="#fff"/>
+        <circle cx="69.2" cy="64.5" r="1" fill="#fff"/>
+        <path d="M45 61 Q50 57 56 57" fill="none" stroke="#7a5230" stroke-width="2" stroke-linecap="round"/>
+        <path d="M64 57 Q70 57 75 61" fill="none" stroke="#7a5230" stroke-width="2" stroke-linecap="round"/>
+        <ellipse cx="60" cy="79" rx="4.5" ry="5.5" fill="#9c4a52"/>
+        <ellipse cx="60" cy="81" rx="2.4" ry="2.4" fill="#d98b94"/>
+        <rect x="42" y="40" width="36" height="14" rx="5" fill="#ffffff" stroke="#e2e8ee" stroke-width="2"/>
+        <g fill="#ffffff" stroke="#e2e8ee" stroke-width="2">
+          <circle cx="46" cy="32" r="12"/><circle cx="60" cy="25" r="14"/><circle cx="74" cy="32" r="12"/>
+        </g>
+        <rect x="44" y="41" width="32" height="7" fill="#ffffff"/>
+      </svg>
+
+      <div class="cs-cartwrap">
+        <svg class="cs-cart" viewBox="0 0 170 150" aria-hidden="true">
+          <!-- handle -->
+          <path d="M22 24 L22 104" fill="none" stroke="#8a5a36" stroke-width="7" stroke-linecap="round"/>
+          <path d="M22 24 L44 24" fill="none" stroke="#8a5a36" stroke-width="7" stroke-linecap="round"/>
+          <!-- shelves + frame -->
+          <rect x="34" y="86" width="128" height="9" rx="3" fill="#c79a62" stroke="#a9794b" stroke-width="2"/>
+          <rect x="20" y="120" width="142" height="11" rx="4" fill="#a9794b"/>
+          <rect x="36" y="92" width="6" height="30" fill="#a9794b"/>
+          <rect x="154" y="92" width="6" height="30" fill="#a9794b"/>
+          <!-- stacked oval plates (multiple columns, two decks) -->
+          <g class="cs-load" fill="#ffffff" stroke="#7cc6ff" stroke-width="2.5">
+            <!-- upper deck -->
+            <ellipse cx="66"  cy="84" rx="18" ry="5"/><ellipse cx="66"  cy="78" rx="18" ry="5"/><ellipse cx="66"  cy="72" rx="18" ry="5"/><ellipse cx="66"  cy="66" rx="18" ry="5"/>
+            <ellipse cx="100" cy="84" rx="18" ry="5"/><ellipse cx="100" cy="78" rx="18" ry="5"/><ellipse cx="100" cy="72" rx="18" ry="5"/><ellipse cx="100" cy="66" rx="18" ry="5"/>
+            <ellipse cx="134" cy="84" rx="18" ry="5"/><ellipse cx="134" cy="78" rx="18" ry="5"/><ellipse cx="134" cy="72" rx="18" ry="5"/><ellipse cx="134" cy="66" rx="18" ry="5"/>
+            <!-- lower deck -->
+            <ellipse cx="66"  cy="118" rx="17" ry="5"/><ellipse cx="66"  cy="112" rx="17" ry="5"/><ellipse cx="66"  cy="106" rx="17" ry="5"/>
+            <ellipse cx="100" cy="118" rx="17" ry="5"/><ellipse cx="100" cy="112" rx="17" ry="5"/><ellipse cx="100" cy="106" rx="17" ry="5"/>
+            <ellipse cx="134" cy="118" rx="17" ry="5"/><ellipse cx="134" cy="112" rx="17" ry="5"/><ellipse cx="134" cy="106" rx="17" ry="5"/>
+          </g>
+          <!-- wheels -->
+          <g class="wheel" style="transform-box:fill-box;"><circle cx="54"  cy="140" r="15" fill="#4a4f57" stroke="#2c3e57" stroke-width="3"/><circle cx="54"  cy="140" r="4" fill="#cdd5dd"/></g>
+          <g class="wheel" style="transform-box:fill-box;"><circle cx="148" cy="140" r="15" fill="#4a4f57" stroke="#2c3e57" stroke-width="3"/><circle cx="148" cy="140" r="4" fill="#cdd5dd"/></g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="cs-flyers" id="cs-flyers"></div>
+  </div>
+</div>
+
 <script>
 "use strict";
 
@@ -576,6 +715,7 @@ const I18N = {
     pickSub:"your typing adventure",
     back:"Back",
     hint:"Type what's on the plate!",
+    csHint:"…and that's why he's always catching plates!",
     plates:"plates",
     level:"Level",
     mode_letters:"Letters",
@@ -614,6 +754,7 @@ const I18N = {
     pickSub:"הרפתקת ההקלדה שלך",
     back:"חזרה",
     hint:"הקלידו מה שכתוב על הצלחת!",
+    csHint:"…ולכן הוא תמיד תופס צלחות!",
     plates:"צלחות",
     level:"שלב",
     mode_letters:"אותיות",
@@ -1255,6 +1396,73 @@ function challengeGameOver(){
 // =========================================================
 //  Visual FX
 // =========================================================
+// ----- Intro cutscene: the baker's plate cart trips and plates fly sky-high -----
+let introTimers = [];
+// An oval plate (matches the cart's stacked plates), used for the flying pieces.
+const CS_PLATE_SVG =
+  '<svg viewBox="0 0 52 20"><ellipse cx="26" cy="10" rx="24" ry="8" fill="#fff" stroke="#7cc6ff" stroke-width="3"/>' +
+  '<ellipse cx="26" cy="9" rx="14" ry="4.5" fill="#eef4f9"/></svg>';
+function spawnFlyingPlates(){
+  const c = $("#cs-flyers");
+  c.innerHTML = "";
+  const vh = window.innerHeight || 700;
+  for(let i=0;i<16;i++){
+    const s = document.createElement("span");
+    s.className = "csp";
+    s.innerHTML = CS_PLATE_SVG;
+    s.style.width = Math.round(44 + Math.random()*34) + "px";   // bigger plates
+    s.style.left = `calc(50% + ${Math.round(Math.random()*220 - 30)}px)`;  // from over the cart
+    s.style.bottom = Math.round(190 + Math.random()*90) + "px";
+    s.style.setProperty("--fx", Math.round(Math.random()*300-150) + "px");
+    s.style.setProperty("--fy", Math.round(-(vh*0.9) - Math.random()*260) + "px");  // up past the ceiling
+    s.style.setProperty("--fr", Math.round(Math.random()*1080-540) + "deg");
+    s.style.animationDelay = (Math.random()*0.14) + "s";
+    c.appendChild(s);
+  }
+}
+function playIntro(done){
+  const cs = $("#cutscene");
+  introTimers.forEach(clearTimeout); introTimers = [];
+  cs.classList.remove("tripped","leaving");
+  $("#cs-flyers").innerHTML = "";
+  let phase = 0;   // 0=walking, 1=tripped, 2=leaving, 3=done
+  cs.classList.add("active");
+
+  // light, rhythmic footsteps as he walks in
+  beep(200,0,.05,"sine",.05); beep(200,.55,.05,"sine",.05); beep(200,1.1,.05,"sine",.05);
+
+  function trip(){                          // cart hits the peel: flip + plates fly
+    if(phase !== 0) return;
+    phase = 1;
+    cs.classList.add("tripped");
+    spawnFlyingPlates();
+    playSound("smash");
+    beep(880,.02,.06,"square",.06);
+    introTimers.push(setTimeout(()=>{ if(phase===1){ phase=2; cs.classList.add("leaving"); } }, 1200));
+  }
+  function finish(){
+    if(phase === 3) return;
+    phase = 3;
+    introTimers.forEach(clearTimeout); introTimers = [];
+    cs.removeEventListener("click", finish);
+    cs.removeEventListener("animationend", onAnim);
+    cs.classList.remove("active","tripped","leaving");
+    $("#cs-flyers").innerHTML = "";
+    done();
+  }
+  // Drive the story off the visible animations (reliable even if timers are throttled).
+  function onAnim(e){
+    if(e.animationName === "csWalk") trip();        // he arrived → trip
+    else if(e.animationName === "csFade") finish();  // fade done → go to the map
+  }
+  cs.addEventListener("animationend", onAnim);
+  cs.addEventListener("click", finish);   // click to skip
+
+  // Fallbacks, only if an animationend never arrives (e.g. reduced motion).
+  introTimers.push(setTimeout(trip, 2400));
+  introTimers.push(setTimeout(finish, 4400));
+}
+
 function confetti(){
   const fx = $("#fx");
   const emojis = ["🎉","✨","⭐","🍽️","🎊","🥳"];
@@ -1299,7 +1507,7 @@ document.addEventListener("click", e=>{
 document.addEventListener("keydown", onKey);
 window.addEventListener("blur", ()=>{ game.lastTs = performance.now(); });   // avoid a jump after refocus
 
-$("#play-btn").addEventListener("click", ()=>{ playSound("tap"); showScreen("select"); });
+$("#play-btn").addEventListener("click", ()=>{ playSound("tap"); playIntro(()=>showScreen("select")); });
 $("#endless-challenge").addEventListener("click", ()=>{ playSound("tap"); startChallenge(); });
 $("#mute-btn-title").addEventListener("click", toggleMute);
 $("#mute-btn-play").addEventListener("click", toggleMute);

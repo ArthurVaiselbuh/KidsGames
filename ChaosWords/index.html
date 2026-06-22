@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>מילים מבולגנות 🔤 — בנו את המשפט!</title>
+<style>
+  /* ---------- Theme ---------- */
+  :root{
+    --paper:#fff8ef;
+    --paper-2:#f3e9fb;
+    --ink:#3a2c52;
+    --ink-soft:#7a6a95;
+    --grape:#8b5cf6;
+    --grape-deep:#6d3edb;
+    --pink:#ff8fab;
+    --pink-deep:#f4628a;
+    --sun:#ffd166;
+    --mint:#7be0c0;
+    --sky:#7cc6ff;
+    --good:#5fbf6a;
+    /* per-tier accent colours (set on the play screen via data-tier) */
+    --accent:#8b5cf6;
+    --accent-deep:#6d3edb;
+    --shadow:0 6px 0 rgba(0,0,0,.12), 0 12px 24px rgba(0,0,0,.12);
+    --radius:22px;
+    font-size:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Comic Sans MS","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 14% 12%, #fff 0 7%, transparent 8%),
+      radial-gradient(circle at 84% 18%, #fff 0 5%, transparent 6%),
+      linear-gradient(160deg, var(--paper-2), #fef3ff 50%, var(--paper));
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+  }
+  #app{
+    max-width:820px;
+    margin:0 auto;
+    min-height:100%;
+    padding:14px 16px 26px;
+    position:relative;
+    z-index:1;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- Ambient drifting-letters background ---------- */
+  #bg{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;}
+  .drift{
+    position:absolute; font-weight:900; color:var(--grape);
+    opacity:.10; will-change:transform; user-select:none;
+    animation:drift linear infinite;
+  }
+  @keyframes drift{
+    from{transform:translateY(110vh) rotate(0);}
+    to{transform:translateY(-20vh) rotate(var(--spin,180deg));}
+  }
+
+  /* ---------- Screens ---------- */
+  .screen{display:none; animation:fade .35s ease both; flex:1; flex-direction:column;}
+  .screen.active{display:flex;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:inherit; font-weight:800; cursor:pointer; border:none;
+    background:var(--grape); color:#fff; border-radius:var(--radius);
+    padding:16px 26px; font-size:1.25rem; box-shadow:var(--shadow);
+    transition:transform .08s ease, filter .15s ease;
+    text-shadow:0 2px 0 rgba(0,0,0,.12);
+  }
+  .btn:active{transform:translateY(3px);}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.big{font-size:1.7rem; padding:20px 44px;}
+  .btn.ghost{background:#fff; color:var(--ink); box-shadow:0 4px 0 rgba(0,0,0,.1);}
+  .btn.green{background:var(--good);}
+  .icon-btn{
+    background:#fff; border:none; border-radius:50%; width:48px; height:48px;
+    font-size:1.4rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.1);
+  }
+  .icon-btn:active{transform:translateY(2px);}
+  .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
+
+  /* ---------- Title screen ---------- */
+  .hero{text-align:center; padding:18px 6px 6px; margin:auto 0;}
+  .logo{
+    font-size:clamp(2.3rem,8.5vw,4rem); font-weight:900; line-height:1.05;
+    color:var(--grape-deep); text-shadow:0 4px 0 #fff, 0 6px 0 rgba(0,0,0,.12);
+    margin:6px 0 2px;
+  }
+  .logo .em{display:inline-block; animation:bob 2.2s ease-in-out infinite;}
+  .tagline{font-size:1.15rem; color:var(--ink-soft); margin:0 0 16px;}
+  /* a little jumbled-tile parade on the title */
+  .title-tiles{display:flex; justify-content:center; gap:8px; margin:8px 0 18px; flex-wrap:wrap;}
+  .title-tiles .wt{
+    display:inline-block; padding:10px 14px; border-radius:14px; font-weight:900;
+    font-size:1.3rem; color:#fff; box-shadow:var(--shadow);
+    animation:bob 2.6s ease-in-out infinite;
+  }
+  .title-tiles .wt:nth-child(1){background:var(--pink);     transform:rotate(-5deg); animation-delay:0s;}
+  .title-tiles .wt:nth-child(2){background:var(--sky);      transform:rotate(4deg);  animation-delay:.2s;}
+  .title-tiles .wt:nth-child(3){background:var(--mint);     transform:rotate(-3deg); animation-delay:.4s; color:var(--ink);}
+  .title-tiles .wt:nth-child(4){background:var(--sun);      transform:rotate(6deg);  animation-delay:.6s; color:var(--ink);}
+  .title-actions{display:flex; flex-direction:column; align-items:center; gap:12px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+  .topbar .spacer{flex:1;}
+  .level-tag{font-weight:900; font-size:1.05rem; text-align:center; line-height:1.1;}
+  .level-tag small{display:block; font-weight:700; color:var(--ink-soft); font-size:.8rem;}
+  .lang-pill{
+    background:#fff; border-radius:999px; padding:8px 16px; font-weight:900;
+    box-shadow:0 4px 0 rgba(0,0,0,.1); font-size:1.05rem; white-space:nowrap;
+  }
+
+  /* ---------- Progress row ---------- */
+  .progress-row{display:flex; align-items:center; gap:12px; margin:4px 2px 10px;}
+  .round-count{font-weight:900; white-space:nowrap; font-size:1.05rem;}
+  .bar{
+    flex:1; height:18px; background:#fff; border-radius:999px; overflow:hidden;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.12);
+  }
+  .bar-fill{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--good), var(--sun));
+    border-radius:999px; transition:width .3s ease;
+  }
+
+  /* ---------- Play board ---------- */
+  .board{
+    position:relative; flex:1; display:flex; flex-direction:column;
+    background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.45));
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:16px 14px 20px; overflow:hidden;
+  }
+  .board-hint{
+    text-align:center; font-weight:800; color:var(--ink-soft);
+    font-size:1rem; min-height:1.4em; margin-bottom:8px;
+  }
+
+  /* the sentence line: empty slots that follow document direction (so Hebrew is RTL) */
+  .slots{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;
+    min-height:70px; padding:10px; margin:0 auto 14px; max-width:680px;
+  }
+  .slot{
+    min-width:60px; min-height:54px; border-radius:14px;
+    border:3px dashed rgba(122,106,149,.4);
+    background:rgba(255,255,255,.5);
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color .15s, background .15s, transform .1s;
+  }
+  .slot.over{   /* a tile is hovering over this landing pad */
+    border-color:var(--accent); background:rgba(139,92,246,.12);
+    transform:scale(1.05);
+  }
+  .slot.hint{   /* gentle hint highlight for the correct word */
+    border-color:var(--good); background:rgba(95,191,106,.18);
+    animation:hintPulse 1.2s ease;
+  }
+  @keyframes hintPulse{0%,100%{box-shadow:0 0 0 0 rgba(95,191,106,0);} 50%{box-shadow:0 0 0 5px rgba(95,191,106,.4);}}
+
+  /* the jumble tray of loose tiles */
+  .tray{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;
+    min-height:64px; padding:12px 10px; margin:0 auto; max-width:680px;
+    border-radius:18px; background:rgba(139,92,246,.07);
+    border:2px dashed rgba(139,92,246,.25);
+  }
+  .tray-label{
+    text-align:center; font-weight:800; color:var(--ink-soft);
+    font-size:.85rem; margin:14px 0 4px;
+  }
+
+  /* ---------- Word tiles (scrabble / bubble feel) ---------- */
+  .tile{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:12px 16px; border-radius:14px;
+    font-weight:900; font-size:1.4rem; color:#fff;
+    background:var(--accent);
+    box-shadow:0 5px 0 rgba(0,0,0,.18), 0 8px 14px rgba(0,0,0,.14);
+    text-shadow:0 2px 0 rgba(0,0,0,.18);
+    cursor:grab; user-select:none; touch-action:none;
+    white-space:nowrap; line-height:1;
+    transition:transform .12s ease, filter .12s;
+  }
+  .tile:active{cursor:grabbing;}
+  /* each tile gets a slight playful tilt + a colour from its index */
+  .tile.c0{background:var(--pink);}
+  .tile.c1{background:var(--sky);}
+  .tile.c2{background:var(--mint);  color:var(--ink); text-shadow:0 2px 0 rgba(255,255,255,.4);}
+  .tile.c3{background:var(--sun);   color:var(--ink); text-shadow:0 2px 0 rgba(255,255,255,.4);}
+  .tile.c4{background:var(--grape);}
+  .tile.c5{background:var(--pink-deep);}
+  .tile.tilt-a{transform:rotate(-3deg);}
+  .tile.tilt-b{transform:rotate(2.5deg);}
+  .tile.tilt-c{transform:rotate(-1.5deg);}
+  .tile.landing{animation:landPop .3s ease;}        /* snap-into-slot pop */
+  .tile.dragging{visibility:hidden;}                 /* original hidden while ghost flies */
+  .tile.wrong{animation:wobble .4s ease;}
+  /* celebratory bob wave on a correct sentence (staggered via inline delay) */
+  .tile.celebrate{animation:bobWave .6s ease;}
+  @keyframes landPop{0%{transform:scale(.6);} 70%{transform:scale(1.12);} 100%{transform:scale(1);}}
+  @keyframes bobWave{0%,100%{transform:translateY(0) rotate(0);} 40%{transform:translateY(-16px) rotate(-4deg);} 70%{transform:translateY(0) rotate(3deg);}}
+
+  /* the floating "ghost" tile that follows the finger/cursor while dragging */
+  #ghost{
+    position:fixed; left:0; top:0; z-index:80; pointer-events:none;
+    transform:translate(-50%,-50%) scale(1.08) rotate(-2deg);
+    box-shadow:0 10px 0 rgba(0,0,0,.18), 0 16px 26px rgba(0,0,0,.22);
+    display:none;
+  }
+  #ghost.on{display:inline-flex;}
+
+  /* picture that pops up when a sentence is solved */
+  .reveal-pic{
+    text-align:center; font-size:3.4rem; min-height:1.2em; margin-top:6px;
+  }
+  .reveal-pic .em{display:inline-block; animation:pop .5s ease both;}
+
+  .play-actions{display:flex; justify-content:center; gap:12px; margin-top:14px;}
+
+  /* ---------- Level select ---------- */
+  .select-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .grid-levels{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px;}
+  .level-card{
+    background:#fff; border-radius:20px; box-shadow:var(--shadow); padding:14px 10px;
+    text-align:center; cursor:pointer; border:3px solid transparent; transition:transform .1s;
+  }
+  .level-card:active{transform:translateY(2px);}
+  .level-card .lc-emoji{font-size:2.6rem;}
+  .level-card .lc-name{font-weight:900; margin:4px 0 2px;}
+  .level-card .lc-sub{font-size:.82rem; color:var(--ink-soft); min-height:1.6em;}
+  .level-card .lc-stars{font-size:1.1rem; letter-spacing:2px; margin-top:6px; color:var(--sun);}
+  .level-card.locked{opacity:.55; cursor:not-allowed; background:#efeaf6;}
+  .level-card.locked .lc-emoji{filter:grayscale(1);}
+  .world-label{grid-column:1/-1; font-weight:900; color:var(--ink-soft); margin:8px 2px 0; font-size:1rem;}
+
+  /* ---------- Complete screen ---------- */
+  .complete{
+    text-align:center; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:26px 18px; margin:auto 0;
+  }
+  .complete h2{font-size:2rem; color:var(--grape-deep); margin:4px 0 8px;}
+  .stars-big{font-size:3.4rem; letter-spacing:8px; height:1.4em; color:var(--sun);}
+  .stars-big .s{display:inline-block; opacity:.25;}
+  .stars-big .s.on{opacity:1; animation:pop .5s ease both;}
+  .reward-line{font-size:1.3rem; font-weight:800; margin:10px 0 18px;}
+  .complete .btn{margin:6px;}
+
+  /* ---------- FX ---------- */
+  #fx{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50;}
+  .confetti{position:absolute; font-size:1.6rem; animation:confetti-fall linear forwards;}
+
+  /* ---------- Keyframes ---------- */
+  @keyframes bob{0%,100%{transform:translateY(0);} 50%{transform:translateY(-9px);}}
+  @keyframes pop{0%{transform:scale(.4);} 70%{transform:scale(1.15);} 100%{transform:scale(1);}}
+  @keyframes wobble{0%,100%{transform:translateX(0);} 20%{transform:translateX(-8px) rotate(-5deg);} 40%{transform:translateX(8px) rotate(5deg);} 60%{transform:translateX(-6px) rotate(-3deg);} 80%{transform:translateX(6px) rotate(3deg);}}
+  @keyframes confetti-fall{from{transform:translateY(-30px) rotate(0);} to{transform:translateY(105vh) rotate(540deg); opacity:.9;}}
+
+  @media (max-width:480px){
+    .tile{font-size:1.15rem; padding:10px 12px;}
+    .slot{min-width:50px; min-height:48px;}
+    .title-tiles .wt{font-size:1.05rem; padding:8px 11px;}
+  }
+</style>
+</head>
+<body>
+<div id="bg" aria-hidden="true"></div>
+<div id="app">
+
+  <!-- ============ TITLE ============ -->
+  <section class="screen active" id="screen-title">
+    <div class="hero">
+      <div class="logo"><span class="em">🔤</span> <span data-i18n="title">Chaos Words</span> <span class="em">✨</span></div>
+      <p class="tagline" data-i18n="tagline">Drag the mixed-up words to build the sentence!</p>
+      <div class="title-tiles">
+        <span class="wt">words</span><span class="wt">the</span><span class="wt">mix</span><span class="wt">up</span>
+      </div>
+      <div class="title-actions">
+        <button class="btn big" id="play-btn" data-i18n="play">▶ Play</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="icon-btn" id="mute-btn-title" data-i18n-title="sound" title="Sound">🔊</button>
+          <button class="mini-link" id="lang-btn">עברית</button>
+          <button class="mini-link" id="reset-btn" data-i18n="reset">Reset progress</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL SELECT ============ -->
+  <section class="screen" id="screen-select">
+    <div class="select-head">
+      <button class="icon-btn" data-go="title">🏠</button>
+      <div class="level-tag" style="flex:1"><span data-i18n="pickLevel">Pick a Level</span><small data-i18n="pickSub">your word adventure</small></div>
+      <div class="lang-pill" id="lang-pill-select">🇬🇧 EN</div>
+    </div>
+    <div class="grid-levels" id="levels-grid"></div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="screen-play">
+    <div class="topbar">
+      <button class="icon-btn" data-go="select" data-i18n-title="back" title="Back">⬅️</button>
+      <div class="spacer"></div>
+      <div class="level-tag" id="play-level">Level<small>World</small></div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="mute-btn-play" data-i18n-title="sound" title="Sound">🔊</button>
+    </div>
+
+    <div class="progress-row">
+      <div class="round-count" id="round-count">📝 1/5</div>
+      <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+    </div>
+
+    <div class="board" id="board">
+      <div class="board-hint" id="board-hint" data-i18n="hint">Drag the words into the right order!</div>
+      <div class="slots" id="slots"></div>
+      <div class="reveal-pic" id="reveal-pic"></div>
+      <div class="tray-label" data-i18n="trayLabel">Mixed-up words</div>
+      <div class="tray" id="tray"></div>
+      <div class="play-actions">
+        <button class="btn ghost" id="shuffle-btn" data-i18n="reshuffle">🔀 Shuffle</button>
+        <button class="btn ghost" id="hint-btn" data-i18n="hintBtn">💡 Hint</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL COMPLETE ============ -->
+  <section class="screen" id="screen-complete">
+    <div class="complete">
+      <div style="font-size:3.4rem" id="complete-emoji">🎉</div>
+      <h2 id="complete-title" data-i18n="cleared">Level Cleared!</h2>
+      <div class="stars-big" id="complete-stars"><span class="s">★</span><span class="s">★</span><span class="s">★</span></div>
+      <div class="reward-line" id="complete-reward"></div>
+      <div>
+        <button class="btn green" id="next-btn"></button>
+        <button class="btn ghost" id="replay-btn" data-i18n="replay">↻ Replay</button>
+        <button class="btn ghost" data-go="select" data-i18n="map">🏠 Map</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+<!-- floating drag ghost (filled in by JS) -->
+<div id="ghost" class="tile"></div>
+<div id="fx"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Chaos Words — single-file kids' sentence-building game.
+   A scrambled sentence is dealt each round; the player drags
+   word tiles into slots to rebuild it. Correct order wins.
+   Tweak LEVELS + SENTENCES below to change difficulty/content.
+   ========================================================= */
+
+// ----- Level configuration (data-driven, language-independent) -----
+// tier      -> which difficulty pool of SENTENCES to draw from ("easy"/"medium"/"hard").
+// worldKey  -> i18n key for the world (difficulty tier) label.
+// nameKey   -> i18n key for the level name.
+// rounds    -> how many sentences to solve to clear the level.
+// accent/accentDeep -> per-tier tile + glow colours.
+const LEVELS = [
+  // ---- Short Sentences (easy: 3–4 words) ----
+  {nameKey:"lvl_firstWords", worldKey:"world_short", emoji:"🐣", tier:"easy",   rounds:5, accent:"#ff8fab", accentDeep:"#f4628a"},
+  {nameKey:"lvl_easyGo",     worldKey:"world_short", emoji:"🌷", tier:"easy",   rounds:5, accent:"#ff8fab", accentDeep:"#f4628a"},
+  // ---- Longer Sentences (medium: 5–6 words) ----
+  {nameKey:"lvl_growing",    worldKey:"world_long",  emoji:"🌻", tier:"medium", rounds:5, accent:"#5aa9f7", accentDeep:"#3a7fd6"},
+  {nameKey:"lvl_storyTime",  worldKey:"world_long",  emoji:"📖", tier:"medium", rounds:5, accent:"#5aa9f7", accentDeep:"#3a7fd6"},
+  // ---- Tricky Sentences (hard: 7–9 words) ----
+  {nameKey:"lvl_brainy",     worldKey:"world_tricky",emoji:"🧠", tier:"hard",   rounds:5, accent:"#8b5cf6", accentDeep:"#6d3edb"},
+  {nameKey:"lvl_master",     worldKey:"world_tricky",emoji:"🏆", tier:"hard",   rounds:5, accent:"#8b5cf6", accentDeep:"#6d3edb"},
+];
+
+// ----- Sentence database (bilingual, by language + difficulty tier) -----
+// Each entry is a clean, space-separated sentence (no punctuation).
+// The engine splits on spaces to get the ordered word list; duplicates are fine.
+// An optional matching emoji can be appended after "|" to pop up on success.
+const SENTENCES = {
+  en:{
+    easy:[
+      "the cat is happy|🐱","I like red apples|🍎","the dog can run|🐶","we play all day|🎈",
+      "the sun is hot|☀️","my mom is kind|💖","birds can fly high|🐦","the fish can swim|🐟",
+      "I see a star|⭐","the cake is sweet|🍰","we love to sing|🎵","the frog is green|🐸",
+      "my dad is tall|👨","the ball is round|⚽","I have two hands|✋","the moon is bright|🌙",
+      "the bear is big|🐻","we eat good food|🍽️","the bee likes flowers|🐝","I can jump high|🤸",
+      "the train is fast|🚆","my cat is soft|🐈","we read fun books|📚","the rain is wet|🌧️",
+      "the duck says quack|🦆","I love my dog|🐕","the snow is cold|❄️","we run very fast|🏃",
+      "the owl is wise|🦉","my shoes are blue|👟","the tree is tall|🌳","I drink cold milk|🥛",
+      "the car is fast|🚗","we hug our friends|🤗","the lion can roar|🦁","my hat is red|🎩",
+    ],
+    medium:[
+      "the little cat plays with a ball|🐱","we like to read good books|📚","my dog runs in the green park|🐶",
+      "the sun is shining in the sky|☀️","I eat a sweet red apple today|🍎","the happy birds sing every morning|🐦",
+      "we go to school on the bus|🚌","my mom bakes a big chocolate cake|🍰","the fish swim in the cool water|🐟",
+      "a brave lion lives in the jungle|🦁","we play in the snow all winter|⛄","the bee buzzes around the bright flowers|🐝",
+      "my friend has a fluffy white rabbit|🐰","the rocket flies up to the moon|🚀","I love to paint with bright colors|🎨",
+      "the train goes fast down the track|🚆","we build a tall sand castle|🏰","my grandma tells the best stories|👵",
+      "the puppy wags its happy little tail|🐕","we watch the stars at night|⭐","a green frog sits on a log|🐸",
+      "the baby elephant drinks lots of water|🐘","we sing happy songs together every day|🎵","my new red bike is very fast|🚲",
+      "the busy ants carry tiny crumbs home|🐜","I draw a big yellow sun|☀️","the kind teacher helps us learn|👩‍🏫",
+      "we plant seeds in the warm soil|🌱","the playful dolphins jump out the sea|🐬","my soft pillow is on the bed|🛏️",
+      "the farmer feeds the hungry cows|🐄","we fly a kite on windy days|🪁","a wise old owl hoots at night|🦉",
+    ],
+    hard:[
+      "the clever fox jumps over the lazy brown dog|🦊","we watched the bright fireworks light up the dark sky|🎆",
+      "my little sister loves to dance in the rain|💃","the brave knight rode his horse to the castle|🏰",
+      "a curious monkey climbed up the tall green tree|🐵","we shared a big bowl of warm tomato soup|🍲",
+      "the gentle giant gave the children a friendly wave|👋","my best friend and I built a wooden tree house|🌳",
+      "the colorful butterfly landed softly on the yellow flower|🦋","we packed our bags for a long summer trip|🧳",
+      "the busy baker made fresh bread early every morning|🍞","a tiny mouse hid behind the old wooden door|🐭",
+      "the happy children played games in the sunny backyard|🎮","my dad and I went fishing by the calm lake|🎣",
+      "the sleepy puppy curled up next to the warm fire|🐶","we found a shiny gold coin under the rock|🪙",
+      "the kind doctor helped the sick boy feel much better|🩺","a flock of geese flew south for the cold winter|🦢",
+      "the magic wizard waved his wand and made stars appear|🧙","we rode our bikes all around the quiet town|🚲",
+      "the hungry caterpillar ate through five juicy green leaves|🐛","my mom planted bright red roses in the garden|🌹",
+      "the pirate ship sailed across the deep blue ocean|🏴‍☠️","we roasted soft marshmallows over the crackling camp fire|🔥",
+      "the little robot beeped and rolled across the smooth floor|🤖","a rainbow appeared after the heavy summer rain stopped|🌈",
+      "the cheerful clown juggled five balls at the circus|🤡","we counted all the twinkling stars in the night sky|⭐",
+      "the strong farmer carried the heavy bags of grain|🌾","my grandpa told us a funny story before bed|👴",
+    ],
+  },
+  he:{
+    easy:[
+      "החתול שלי שמח|🐱","אני אוהב תפוחים אדומים|🍎","הכלב יודע לרוץ|🐶","אנחנו משחקים כל היום|🎈",
+      "השמש מאוד חמה|☀️","אמא שלי טובה|💖","הציפור עפה גבוה|🐦","הדג שוחה במים|🐟",
+      "אני רואה כוכב|⭐","העוגה מאוד מתוקה|🍰","אנחנו אוהבים לשיר|🎵","הצפרדע צבעה ירוקה|🐸",
+      "אבא שלי גבוה|👨","הכדור הוא עגול|⚽","יש לי שתי ידיים|✋","הירח מאיר בלילה|🌙",
+      "הדוב הוא גדול|🐻","אנחנו אוכלים אוכל טעים|🍽️","הדבורה אוהבת פרחים|🐝","אני קופץ גבוה מאוד|🤸",
+      "הרכבת נוסעת מהר|🚆","החתול שלי רך|🐈","אנחנו קוראים ספרים טובים|📚","הגשם מאוד רטוב|🌧️",
+      "הברווז אומר קוואק|🦆","אני אוהב את הכלב|🐕","השלג מאוד קר|❄️","אנחנו רצים מהר מאוד|🏃",
+      "הינשוף מאוד חכם|🦉","הנעליים שלי כחולות|👟","העץ מאוד גבוה|🌳","אני שותה חלב קר|🥛",
+      "המכונית נוסעת מהר|🚗","אנחנו מחבקים את החברים|🤗","האריה יודע לשאוג|🦁","הכובע שלי אדום|🎩",
+    ],
+    medium:[
+      "החתול הקטן משחק עם הכדור|🐱","אנחנו אוהבים לקרוא ספרים טובים|📚","הכלב שלי רץ בפארק הירוק|🐶",
+      "השמש זורחת גבוה בשמיים הכחולים|☀️","אני אוכל תפוח אדום ומתוק היום|🍎","הציפורים השמחות שרות בכל בוקר|🐦",
+      "אנחנו נוסעים לבית הספר באוטובוס|🚌","אמא שלי אופה עוגת שוקולד גדולה|🍰","הדגים שוחים במים הקרירים והצלולים|🐟",
+      "אריה אמיץ אחד גר בתוך הג׳ונגל|🦁","אנחנו משחקים בשלג הלבן כל החורף|⛄","הדבורה מזמזמת סביב הפרחים הצבעוניים|🐝",
+      "לחבר שלי יש ארנב לבן ורך|🐰","הטיל טס גבוה עד הירח הכסוף|🚀","אני אוהב לצייר בצבעים בהירים ויפים|🎨",
+      "הרכבת נוסעת מהר על המסילה הארוכה|🚆","אנחנו בונים מגדל חול גבוה בחוף|🏰","סבתא שלי מספרת את הסיפורים הכי טובים|👵",
+      "הגור הקטן מכשכש בזנב השמח שלו|🐕","אנחנו צופים בכוכבים הזוהרים בלילה|⭐","צפרדע ירוקה יושבת על בול עץ|🐸",
+      "פיל התינוק שותה הרבה מים קרים|🐘","אנחנו שרים שירים שמחים יחד בכל יום|🎵","האופניים האדומים שלי מהירים מאוד|🚲",
+      "הנמלים החרוצות נושאות פירורים קטנים הביתה|🐜","אני מצייר שמש צהובה וגדולה בשמיים|☀️","המורה הטובה עוזרת לנו ללמוד|👩‍🏫",
+      "אנחנו שותלים זרעים קטנים באדמה החמה|🌱","הדולפינים השמחים קופצים מתוך הים הכחול|🐬","הכרית הרכה שלי מונחת על המיטה|🛏️",
+      "החקלאי מאכיל את הפרות הרעבות בשדה|🐄","אנחנו מעיפים עפיפון ביום של רוח|🪁","ינשוף חכם וזקן מנהם בלילה החשוך|🦉",
+    ],
+    hard:[
+      "השועל הפיקח קופץ מעל הכלב החום והעצלן|🦊","אנחנו צפינו בזיקוקים הצבעוניים מאירים את השמיים החשוכים|🎆",
+      "אחותי הקטנה אוהבת מאוד לרקוד בתוך הגשם|💃","האביר האמיץ רכב על הסוס שלו אל הטירה|🏰",
+      "קוף סקרן אחד טיפס גבוה על העץ הירוק|🐵","חילקנו יחד קערה גדולה של מרק עגבניות חם|🍲",
+      "הענק הטוב נופף לילדים הקטנים לשלום בידו|👋","החבר הכי טוב שלי ואני בנינו בית עץ|🌳",
+      "הפרפר הצבעוני נחת בעדינות על הפרח הצהוב והיפה|🦋","ארזנו את התיקים שלנו לטיול קיץ ארוך|🧳",
+      "האופה החרוץ הכין לחם טרי וחם מוקדם בבוקר|🍞","עכבר קטן אחד הסתתר מאחורי הדלת העתיקה|🐭",
+      "הילדים השמחים שיחקו משחקים כיפיים בחצר השטופה בשמש|🎮","אבא שלי ואני הלכנו לדוג ליד האגם השקט|🎣",
+      "הגור המנומנם התכרבל לו ליד האח החמה והנעימה|🐶","מצאנו מטבע זהב נוצץ אחד מתחת לסלע הגדול|🪙",
+      "הרופא הטוב עזר לילד החולה להרגיש הרבה יותר טוב|🩺","להקת אווזים גדולה עפה דרומה אל החורף הקר|🦢",
+      "הקוסם הקסום נופף בשרביט שלו ויצר כוכבים זוהרים|🧙","רכבנו על האופניים שלנו מסביב לעיירה השקטה|🚲",
+      "הזחל הרעב אכל לו דרך חמישה עלים ירוקים ועסיסיים|🐛","אמא שלי שתלה ורדים אדומים ויפים בתוך הגינה|🌹",
+      "ספינת הפיראטים הפליגה הרחק על פני האוקיינוס הכחול והעמוק|🏴‍☠️","צלינו פצפוצי מרשמלו רכים מעל מדורת המחנה הבוערת|🔥",
+      "הרובוט הקטן צפצף וגלגל את עצמו על הרצפה החלקה|🤖","קשת בענן הופיעה אחרי שהגשם הכבד של הקיץ פסק|🌈",
+      "הליצן העליז להטט בחמישה כדורים צבעוניים בתוך הקרקס|🤡","ספרנו יחד את כל הכוכבים הזוהרים בשמי הלילה|⭐",
+      "החקלאי החזק נשא על גבו את שקי התבואה הכבדים|🌾","סבא שלי סיפר לנו סיפור מצחיק וטוב לפני השינה|👴",
+    ],
+  },
+};
+
+// ----- String table (i18n). Add a language by adding another block. -----
+const I18N = {
+  en:{
+    dir:"ltr", langName:"עברית", langPill:"🇬🇧 EN",
+    title:"Chaos Words",
+    tagline:"Drag the mixed-up words to build the sentence!",
+    play:"▶ Play",
+    sound:"Sound",
+    reset:"Reset progress",
+    pickLevel:"Pick a Level",
+    pickSub:"your word adventure",
+    back:"Back",
+    hint:"Drag the words into the right order!",
+    trayLabel:"Mixed-up words",
+    reshuffle:"🔀 Shuffle",
+    hintBtn:"💡 Hint",
+    round:"Round",          // shown as: Round 2/5
+    rounds:"rounds",        // shown as: 5 rounds
+    great:"Great! 🎉",
+    tryAgain:"Hmm, not quite — try again!",
+    hintShown:"Here's one word for you!",
+    cleared:"Level Cleared!",
+    allDone:"You're a Word Wizard! 🏆",
+    solved:"solved",
+    perfect:"Perfect!",
+    oops_one:"1 oops",
+    oops_many:"oops",        // shown as: 3 oops
+    next:"Next ▶",
+    replay:"↻ Replay",
+    map:"🏠 Map",
+    resetConfirm:"Start over? This clears all stars in both languages.",
+    resetDone:"Progress reset! 🧹",
+    world_short:"Short Sentences", world_long:"Longer Sentences", world_tricky:"Tricky Sentences",
+    lvl_firstWords:"First Words", lvl_easyGo:"Easy Does It",
+    lvl_growing:"Growing Up",     lvl_storyTime:"Story Time",
+    lvl_brainy:"Brain Teaser",    lvl_master:"Word Master",
+  },
+  he:{
+    dir:"rtl", langName:"English", langPill:"🇮🇱 עב",
+    title:"מילים מבולגנות",
+    tagline:"גררו את המילים המבולגנות ובנו את המשפט!",
+    play:"▶ שחקו",
+    sound:"צליל",
+    reset:"איפוס התקדמות",
+    pickLevel:"בחרו שלב",
+    pickSub:"הרפתקת המילים שלך",
+    back:"חזרה",
+    hint:"גררו את המילים לסדר הנכון!",
+    trayLabel:"מילים מבולגנות",
+    reshuffle:"🔀 ערבוב",
+    hintBtn:"💡 רמז",
+    round:"סבב",
+    rounds:"סבבים",
+    great:"מצוין! 🎉",
+    tryAgain:"כמעט… נסו שוב!",
+    hintShown:"הנה מילה אחת בשבילכם!",
+    cleared:"השלב הושלם!",
+    allDone:"אתם קוסמי מילים! 🏆",
+    solved:"נפתרו",
+    perfect:"מושלם!",
+    oops_one:"טעות אחת",
+    oops_many:"טעויות",
+    next:"הבא ◀",
+    replay:"שוב ↻",
+    map:"🏠 מפה",
+    resetConfirm:"להתחיל מחדש? כל הכוכבים בשתי השפות יימחקו.",
+    resetDone:"ההתקדמות אופסה! 🧹",
+    world_short:"משפטים קצרים", world_long:"משפטים ארוכים", world_tricky:"משפטים מאתגרים",
+    lvl_firstWords:"מילים ראשונות", lvl_easyGo:"קל ופשוט",
+    lvl_growing:"מתקדמים",          lvl_storyTime:"שעת סיפור",
+    lvl_brainy:"שובר את הראש",       lvl_master:"אלוף המילים",
+  },
+};
+const DEFAULT_LANG = "he";
+
+// Look up a translated string (falls back to English, then the key).
+function t(key){
+  const L = I18N[save.lang] || I18N[DEFAULT_LANG];
+  if(L && L[key]!=null) return L[key];
+  if(I18N.en[key]!=null) return I18N.en[key];
+  return key;
+}
+function mistakesText(m){ return m===0 ? t("perfect") : (m===1 ? t("oops_one") : m+" "+t("oops_many")); }
+
+// =========================================================
+//  Persistent save (progress tracked separately per language,
+//  since the sentence content differs by language)
+// =========================================================
+const SAVE_KEY = "chaosWords.save";
+const DEFAULT_SAVE = {
+  lang:DEFAULT_LANG, muted:false,
+  progress:{ he:{unlockedLevel:0, starsByLevel:{}}, en:{unlockedLevel:0, starsByLevel:{}} },
+};
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const s = {...DEFAULT_SAVE, ...parsed};
+    s.progress = {...DEFAULT_SAVE.progress, ...(parsed.progress||{})};
+    for(const lng of ["he","en"]){
+      s.progress[lng] = {unlockedLevel:0, starsByLevel:{}, ...(s.progress[lng]||{})};
+    }
+    if(!I18N[s.lang]) s.lang = DEFAULT_LANG;
+    return s;
+  }catch(e){ return JSON.parse(JSON.stringify(DEFAULT_SAVE)); }
+}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+let save = loadSave();
+function prog(){ return save.progress[save.lang]; }   // progress for the current language
+
+// =========================================================
+//  Helpers
+// =========================================================
+const $ = sel => document.querySelector(sel);
+const randInt = (lo,hi) => lo + Math.floor(Math.random()*(hi-lo+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// Split a database entry "the cat is happy|🐱" into {words:[...], emoji:"🐱"}.
+function parseSentence(entry){
+  const [sentence, emoji] = entry.split("|");
+  const words = sentence.trim().replace(/\s+/g," ").split(" ");
+  return {words, emoji: emoji || ""};
+}
+
+// =========================================================
+//  Sound (tiny Web Audio jingles — no files)
+// =========================================================
+let audioCtx = null;
+function beep(freq, start, dur, type="sine", gain=0.15){
+  if(save.muted) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime + start;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(gain, t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0+dur);
+  }catch(e){}
+}
+function playSound(type){
+  if(type==="place" || type==="snap"){ beep(523,0,.06,"triangle",.10); beep(784,.05,.08,"triangle",.09); }
+  else if(type==="correct" || type==="win"){ [523,659,784,1046].forEach((f,i)=>beep(f,i*.10,.22,"triangle")); }
+  else if(type==="wrong"){ beep(200,0,.16,"sawtooth",.08); }
+  else if(type==="tap"){ beep(440,0,.05,"square",.06); }
+}
+
+// =========================================================
+//  Screen navigation
+// =========================================================
+let currentScreen = "title";
+function showScreen(name){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("#screen-"+name).classList.add("active");
+  currentScreen = name;
+  if(name==="select") renderSelect();
+}
+
+// =========================================================
+//  Level select
+// =========================================================
+function renderSelect(){
+  $("#lang-pill-select").textContent = t("langPill");
+  const grid = $("#levels-grid");
+  grid.innerHTML = "";
+  const p = prog();
+  let lastWorld = null;
+  LEVELS.forEach((lv,i)=>{
+    if(lv.worldKey!==lastWorld){
+      lastWorld = lv.worldKey;
+      const wl = document.createElement("div");
+      wl.className = "world-label";
+      wl.textContent = t(lv.worldKey);
+      grid.appendChild(wl);
+    }
+    const locked = i > p.unlockedLevel;
+    const stars = p.starsByLevel[i]||0;
+    const card = document.createElement("div");
+    card.className = "level-card"+(locked?" locked":"");
+    card.innerHTML = `
+      <div class="lc-emoji">${locked?"🔒":lv.emoji}</div>
+      <div class="lc-name">${t(lv.nameKey)}</div>
+      <div class="lc-sub">${t(lv.worldKey)} • ${lv.rounds} ${t("rounds")}</div>
+      <div class="lc-stars">${starString(stars)}</div>`;
+    if(!locked) card.addEventListener("click",()=>startLevel(i));
+    grid.appendChild(card);
+  });
+}
+function starString(n){ return "★★★".slice(0,n).padEnd(3,"☆"); }
+
+// =========================================================
+//  Game state
+// =========================================================
+const game = {
+  levelIndex:0,
+  roundIndex:0,
+  mistakes:0,          // mistakes across the whole level (for stars)
+  roundMistakes:0,     // mistakes in the current round (drives the hint)
+  target:[],           // the correct ordered list of words
+  emoji:"",            // picture to reveal on success
+  tiles:[],            // tile objects {id, word, colorClass}
+  slots:[],            // slotEl[i] -> tile id currently in slot i, or null
+  solved:false,        // current round already solved (lock input)
+  pool:[],             // remaining sentence entries for this level (no repeats)
+};
+
+// Start a level: build a no-repeat queue of sentences from this tier's pool.
+function startLevel(i){
+  game.levelIndex = i;
+  game.roundIndex = 0;
+  game.mistakes = 0;
+  const lv = LEVELS[i];
+
+  // per-tier accent colours
+  const board = $("#board");
+  document.documentElement.style.setProperty("--accent", lv.accent);
+  document.documentElement.style.setProperty("--accent-deep", lv.accentDeep);
+
+  // a shuffled, no-repeat pool of sentences for this tier (deal `rounds` of them)
+  game.pool = shuffle([...SENTENCES[save.lang][lv.tier]]);
+
+  $("#play-level").innerHTML = `${t(lv.nameKey)}<small>${t(lv.worldKey)}</small>`;
+  showScreen("play");
+  nextRound();
+}
+
+// Deal the next sentence (or finish the level).
+function nextRound(){
+  const lv = LEVELS[game.levelIndex];
+  if(game.roundIndex >= lv.rounds){ completeLevel(); return; }
+
+  // pick a fresh sentence (refill the pool if we somehow run out)
+  if(game.pool.length===0) game.pool = shuffle([...SENTENCES[save.lang][lv.tier]]);
+  const entry = game.pool.pop();
+  const parsed = parseSentence(entry);
+  game.target = parsed.words;
+  game.emoji = parsed.emoji;
+  game.roundMistakes = 0;
+  game.solved = false;
+
+  // build tile objects: each word becomes a positioned token (id + word) so that
+  // duplicate words (e.g. "the cat saw the dog") are tracked independently.
+  game.tiles = game.target.map((word, idx)=>({
+    id: idx,            // stable id within the round
+    word,
+    colorClass: "c"+(idx%6),
+  }));
+
+  // empty all slots
+  game.slots = new Array(game.target.length).fill(null);
+
+  // UI chrome
+  $("#round-count").textContent = `📝 ${game.roundIndex+1}/${lv.rounds}`;
+  $("#bar-fill").style.width = (game.roundIndex/lv.rounds*100)+"%";
+  $("#board-hint").textContent = t("hint");
+  $("#reveal-pic").innerHTML = "";
+
+  buildSlots();
+  dealTray();
+}
+
+// Render the empty slot row (one slot per word, in logical order).
+function buildSlots(){
+  const slotsEl = $("#slots");
+  slotsEl.innerHTML = "";
+  for(let i=0;i<game.target.length;i++){
+    const s = document.createElement("div");
+    s.className = "slot";
+    s.dataset.slot = i;          // logical index — validation is index-based (RTL-safe)
+    slotsEl.appendChild(s);
+  }
+}
+
+// Render the shuffled tiles into the tray, guaranteeing a non-solved start.
+function dealTray(){
+  // a scramble order that is NOT already the solved order (reshuffle if it is)
+  let order = game.tiles.map(t=>t.id);
+  if(order.length>1){
+    let tries=0;
+    do{ shuffle(order); tries++; }
+    while(tries<40 && order.every((id,pos)=> game.tiles[id].word === game.target[pos]));
+  }
+  const trayEl = $("#tray");
+  trayEl.innerHTML = "";
+  order.forEach(id=>{
+    trayEl.appendChild(makeTileEl(game.tiles[id]));
+  });
+}
+
+// Build one draggable tile element.
+function makeTileEl(tile){
+  const el = document.createElement("div");
+  const tilt = ["tilt-a","tilt-b","tilt-c"][tile.id%3];
+  el.className = `tile ${tile.colorClass} ${tilt}`;
+  el.textContent = tile.word;
+  el.dataset.id = tile.id;
+  el.addEventListener("pointerdown", onPointerDown);
+  return el;
+}
+
+// =========================================================
+//  Pointer-based drag & drop (mouse + touch).
+//  We move tiles between the tray and the logical slots using a
+//  floating ghost element; the original tile is hidden while dragging.
+// =========================================================
+const drag = { active:false, tileId:null, el:null, fromSlot:null, pointerId:null };
+
+function onPointerDown(e){
+  if(game.solved) return;            // round already won — ignore
+  const el = e.currentTarget;
+  e.preventDefault();
+  startDrag(el, e);
+}
+
+function startDrag(el, e){
+  drag.active = true;
+  drag.el = el;
+  drag.tileId = +el.dataset.id;
+  drag.pointerId = e.pointerId;
+  // which slot (if any) did this tile come from?
+  const parentSlot = el.parentElement.classList.contains("slot") ? +el.parentElement.dataset.slot : null;
+  drag.fromSlot = parentSlot;
+
+  // set up the floating ghost to mirror the tile
+  const ghost = $("#ghost");
+  ghost.textContent = el.textContent;
+  ghost.className = el.className.replace("dragging","") + " on";  // copy colour/tilt classes
+  ghost.classList.remove("dragging","landing","wrong","celebrate");
+  moveGhost(e.clientX, e.clientY);
+
+  el.classList.add("dragging");
+
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("pointercancel", onPointerUp);
+}
+
+function moveGhost(x,y){
+  const ghost = $("#ghost");
+  ghost.style.left = x+"px";
+  ghost.style.top = y+"px";
+}
+
+function onPointerMove(e){
+  if(!drag.active) return;
+  moveGhost(e.clientX, e.clientY);
+  // highlight the landing pad under the pointer
+  const slot = slotUnder(e.clientX, e.clientY);
+  document.querySelectorAll(".slot.over").forEach(s=>s.classList.remove("over"));
+  if(slot) slot.classList.add("over");
+}
+
+// Which slot element (if any) is under this point?
+function slotUnder(x,y){
+  const els = document.elementsFromPoint(x,y);
+  for(const el of els){
+    if(el.classList && el.classList.contains("slot")) return el;
+    // also allow dropping on a tile that's sitting inside a slot
+    if(el.classList && el.classList.contains("tile") && el.parentElement && el.parentElement.classList.contains("slot")){
+      return el.parentElement;
+    }
+  }
+  // also detect a drop onto the tray area
+  return null;
+}
+
+function onPointerUp(e){
+  if(!drag.active) return;
+  window.removeEventListener("pointermove", onPointerMove);
+  window.removeEventListener("pointerup", onPointerUp);
+  window.removeEventListener("pointercancel", onPointerUp);
+
+  const ghost = $("#ghost");
+  ghost.classList.remove("on");
+
+  document.querySelectorAll(".slot.over").forEach(s=>s.classList.remove("over"));
+
+  const targetSlot = slotUnder(e.clientX, e.clientY);
+  const overTray = isOverTray(e.clientX, e.clientY);
+  const el = drag.el;
+  el.classList.remove("dragging");
+
+  if(targetSlot){
+    dropIntoSlot(el, targetSlot);
+  }else if(overTray || drag.fromSlot!==null){
+    // dropped on the tray (or anywhere off a slot) → send the tile back to the tray
+    returnToTray(el);
+  }
+  // else: dropped in dead space coming from the tray → leave it in the tray (no-op)
+
+  drag.active = false;
+  drag.el = null; drag.tileId = null; drag.fromSlot = null; drag.pointerId = null;
+}
+
+// Is this point over the tray region?
+function isOverTray(x,y){
+  const r = $("#tray").getBoundingClientRect();
+  return x>=r.left && x<=r.right && y>=r.top && y<=r.bottom;
+}
+
+// Place a tile into a slot; if occupied, swap the resident tile back appropriately.
+function dropIntoSlot(el, slotEl){
+  const slotIdx = +slotEl.dataset.slot;
+  const resident = slotEl.querySelector(".tile");
+
+  // clear the tile's old position bookkeeping
+  if(drag.fromSlot!==null) game.slots[drag.fromSlot] = null;
+
+  if(resident && resident!==el){
+    // swap: move the resident either to the dragged tile's old slot, or to the tray
+    if(drag.fromSlot!==null){
+      // place resident into the slot we came from
+      const fromSlotEl = $(`.slot[data-slot="${drag.fromSlot}"]`);
+      fromSlotEl.appendChild(resident);
+      game.slots[drag.fromSlot] = +resident.dataset.id;
+    }else{
+      // we came from the tray → bump the resident back to the tray
+      $("#tray").appendChild(resident);
+    }
+  }
+
+  slotEl.innerHTML = "";        // clear (resident already moved out if it existed)
+  slotEl.appendChild(el);
+  game.slots[slotIdx] = +el.dataset.id;
+  el.classList.add("landing");
+  setTimeout(()=>el.classList.remove("landing"), 300);
+  playSound("snap");
+  checkSolved();
+}
+
+// Send a tile back to the tray.
+function returnToTray(el){
+  if(drag.fromSlot!==null) game.slots[drag.fromSlot] = null;
+  $("#tray").appendChild(el);
+  playSound("tap");
+}
+
+// =========================================================
+//  Win check + hint
+// =========================================================
+// When every slot is filled, compare each slot's WORD STRING to the target word
+// at that index (handles duplicate words correctly; RTL-safe because it's by index).
+function checkSolved(){
+  if(game.slots.some(id=>id===null)) return;     // not all filled yet
+
+  const correct = game.slots.every((id,i)=> game.tiles[id].word === game.target[i]);
+  if(correct){
+    onRoundWin();
+  }else{
+    game.mistakes++;
+    game.roundMistakes++;
+    playSound("wrong");
+    $("#board-hint").textContent = t("tryAgain");
+    // wobble all the filled slots' tiles
+    document.querySelectorAll("#slots .tile").forEach(tl=>{
+      tl.classList.add("wrong");
+      setTimeout(()=>tl.classList.remove("wrong"), 400);
+    });
+  }
+}
+
+function onRoundWin(){
+  game.solved = true;
+  playSound("correct");
+  $("#board-hint").textContent = t("great");
+
+  // celebratory bob-wave stagger across the slot tiles
+  const tiles = [...document.querySelectorAll("#slots .tile")];
+  tiles.forEach((tl,i)=>{
+    setTimeout(()=>{
+      tl.classList.add("celebrate");
+      setTimeout(()=>tl.classList.remove("celebrate"), 600);
+    }, i*90);
+  });
+
+  // pop the sentence's picture
+  if(game.emoji){
+    $("#reveal-pic").innerHTML = `<span class="em">${game.emoji}</span>`;
+  }
+  confetti();
+
+  $("#bar-fill").style.width = ((game.roundIndex+1)/LEVELS[game.levelIndex].rounds*100)+"%";
+
+  setTimeout(()=>{ game.roundIndex++; nextRound(); }, 1500);
+}
+
+// Gentle hint: after a couple of wrong tries (or on the Hint button), reveal the
+// correct word for the first empty/wrong slot by snapping it into place + glowing.
+function showHint(){
+  if(game.solved) return;
+  // find the first slot whose word is wrong or empty
+  let slotIdx = -1;
+  for(let i=0;i<game.target.length;i++){
+    const id = game.slots[i];
+    if(id===null || game.tiles[id].word !== game.target[i]){ slotIdx = i; break; }
+  }
+  if(slotIdx<0) return;
+
+  // find a tile (anywhere not already correctly placed) whose word matches the target
+  const targetWord = game.target[slotIdx];
+  let chosen = null;
+  // prefer a tile currently in the tray; else any misplaced tile
+  const candidates = game.tiles.filter(tl=>{
+    if(tl.word!==targetWord) return false;
+    const placedAt = game.slots.indexOf(tl.id);
+    // skip tiles already sitting correctly
+    return !(placedAt>=0 && game.target[placedAt]===tl.word);
+  });
+  if(candidates.length===0) return;
+  chosen = candidates[0];
+
+  const tileEl = document.querySelector(`.tile[data-id="${chosen.id}"]`);
+  if(!tileEl) return;
+  // if that tile is in another slot, vacate it
+  const curParent = tileEl.parentElement;
+  if(curParent.classList.contains("slot")){
+    game.slots[+curParent.dataset.slot] = null;
+  }
+  // if the target slot has a wrong tile, bump it to the tray
+  const slotEl = $(`.slot[data-slot="${slotIdx}"]`);
+  const resident = slotEl.querySelector(".tile");
+  if(resident && resident!==tileEl) $("#tray").appendChild(resident);
+
+  slotEl.innerHTML = "";
+  slotEl.appendChild(tileEl);
+  game.slots[slotIdx] = chosen.id;
+  slotEl.classList.add("hint");
+  setTimeout(()=>slotEl.classList.remove("hint"), 1200);
+  tileEl.classList.add("landing");
+  setTimeout(()=>tileEl.classList.remove("landing"), 300);
+  $("#board-hint").textContent = t("hintShown");
+  playSound("snap");
+  game.mistakes++;            // a hint counts like a small mistake (affects stars)
+  checkSolved();
+}
+
+// Reshuffle the loose (tray) tiles only — a fresh jumble, keeps placed tiles.
+function reshuffleTray(){
+  if(game.solved) return;
+  const trayEl = $("#tray");
+  const loose = [...trayEl.querySelectorAll(".tile")];
+  shuffle(loose);
+  trayEl.innerHTML = "";
+  loose.forEach(el=>trayEl.appendChild(el));
+  playSound("tap");
+}
+
+// =========================================================
+//  Level complete
+// =========================================================
+function completeLevel(){
+  const i = game.levelIndex;
+  const m = game.mistakes;
+  const stars = m===0 ? 3 : (m<=2 ? 2 : 1);
+
+  const p = prog();
+  p.starsByLevel[i] = Math.max(p.starsByLevel[i]||0, stars);
+  if(i+1 <= LEVELS.length-1) p.unlockedLevel = Math.max(p.unlockedLevel, i+1);
+  persist();
+
+  const isLast = i >= LEVELS.length-1;
+  $("#complete-emoji").textContent = "🎉";
+  $("#complete-title").textContent = isLast ? t("allDone") : t("cleared");
+  $("#complete-reward").textContent = `📝 ${LEVELS[i].rounds} ${t("solved")}  •  ${mistakesText(m)}`;
+
+  const starEls = document.querySelectorAll("#complete-stars .s");
+  starEls.forEach(s=>s.classList.remove("on"));
+  showScreen("complete");
+  starEls.forEach((s,idx)=>{
+    setTimeout(()=>{ if(idx<stars){ s.classList.add("on"); playSound("tap"); } }, 300+idx*250);
+  });
+
+  const nextBtn = $("#next-btn");
+  if(isLast){ nextBtn.textContent = t("map"); nextBtn.onclick = ()=>showScreen("select"); }
+  else { nextBtn.textContent = t("next"); nextBtn.onclick = ()=>startLevel(i+1); }
+  $("#replay-btn").onclick = ()=>startLevel(i);
+
+  playSound("win");
+  confetti();
+}
+
+// =========================================================
+//  Visual FX
+// =========================================================
+function confetti(){
+  const fx = $("#fx");
+  const emojis = ["🎉","✨","⭐","🔤","🎊","🥳","💜"];
+  for(let i=0;i<40;i++){
+    const c = document.createElement("div");
+    c.className="confetti";
+    c.textContent = pick(emojis);
+    c.style.left = Math.random()*100+"vw";
+    c.style.animationDuration = (1.6+Math.random()*1.6)+"s";
+    c.style.animationDelay = (Math.random()*0.5)+"s";
+    fx.appendChild(c);
+    setTimeout(()=>c.remove(), 3600);
+  }
+}
+
+// ----- Ambient drifting letters in the background -----
+function buildBackground(){
+  const bg = $("#bg");
+  bg.innerHTML = "";
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZאבגדהוזחטיכלמנסעפצקרשת".split("");
+  for(let i=0;i<18;i++){
+    const d = document.createElement("div");
+    d.className = "drift";
+    d.textContent = pick(letters);
+    d.style.left = Math.random()*100+"vw";
+    d.style.fontSize = (1.4 + Math.random()*2.6)+"rem";
+    const dur = 14 + Math.random()*18;
+    d.style.animationDuration = dur+"s";
+    d.style.animationDelay = (-Math.random()*dur)+"s";   // stagger so they start mid-flight
+    d.style.setProperty("--spin", (Math.random()*360-180)+"deg");
+    d.style.opacity = (0.05 + Math.random()*0.08).toFixed(2);
+    bg.appendChild(d);
+  }
+}
+
+// =========================================================
+//  Mute + language + wiring
+// =========================================================
+function refreshMute(){
+  const icon = save.muted ? "🔇" : "🔊";
+  $("#mute-btn-title").textContent = icon;
+  $("#mute-btn-play").textContent = icon;
+}
+function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(!save.muted) playSound("tap"); }
+
+function applyLanguage(){
+  if(!I18N[save.lang]) save.lang = DEFAULT_LANG;
+  const L = I18N[save.lang];
+  document.documentElement.lang = save.lang;
+  document.documentElement.dir = L.dir;
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el=>{ el.title = t(el.dataset.i18nTitle); });
+  $("#lang-btn").textContent = L.langName;   // shows the OTHER language to switch to
+  if(currentScreen==="select") renderSelect();
+  // if a round is in progress, re-deal it in the new language (no crash mid-game)
+  if(currentScreen==="play") startLevel(game.levelIndex);
+}
+function toggleLanguage(){ save.lang = (save.lang==="he"?"en":"he"); persist(); applyLanguage(); playSound("tap"); }
+
+document.addEventListener("click", e=>{
+  const go = e.target.closest("[data-go]");
+  if(go) showScreen(go.getAttribute("data-go"));
+});
+$("#play-btn").addEventListener("click", ()=>{ playSound("tap"); showScreen("select"); });
+$("#mute-btn-title").addEventListener("click", toggleMute);
+$("#mute-btn-play").addEventListener("click", toggleMute);
+$("#lang-btn").addEventListener("click", toggleLanguage);
+$("#shuffle-btn").addEventListener("click", reshuffleTray);
+$("#hint-btn").addEventListener("click", showHint);
+$("#reset-btn").addEventListener("click", ()=>{
+  if(confirm(t("resetConfirm"))){
+    const lang = save.lang;                   // keep the chosen language across a reset
+    save = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+    save.lang = lang;
+    persist(); refreshMute(); applyLanguage();
+    alert(t("resetDone"));
+  }
+});
+
+// init
+buildBackground();
+refreshMute();
+applyLanguage();
+</script>
+</body>
+</html>
