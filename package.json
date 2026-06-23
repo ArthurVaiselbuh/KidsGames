@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/build-www.mjs",
     "sync": "npm run build && cap sync android",
-    "open": "cap open android"
+    "open": "cap open android",
+    "serve": "python -m http.server 8080 --bind 0.0.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0"

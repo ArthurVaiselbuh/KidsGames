@@ -10,7 +10,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const www = join(root, "www");
 
 // The five game folders + the launcher entry point.
-const GAME_DIRS = ["ChaosWords", "FallingPlates", "MathBakery", "MemoryLane", "ParkTheCar"];
+const GAME_DIRS = ["BallFactory", "ChaosWords", "FallingPlates", "MathBakery", "MemoryLane", "ParkTheCar"];
 const LAUNCHER = "index.html";
 
 // Start from a clean www/ so removed files don't linger in the bundle.
