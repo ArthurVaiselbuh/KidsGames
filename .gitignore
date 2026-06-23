@@ -1,0 +1,13 @@
+# Capacitor / Node build artifacts
+node_modules/
+www/
+
+# Android signing & local config (NEVER commit the keystore or secrets)
+*.jks
+*.keystore
+android/local.properties
+android/keystore.properties
+
+# OS junk
+.DS_Store
+Thumbs.db

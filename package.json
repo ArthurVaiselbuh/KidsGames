@@ -1,0 +1,18 @@
+{
+  "name": "kidsgames",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A collection of self-contained, bilingual (Hebrew/English) HTML kids' games, packaged for the web (GitHub Pages) and Android (Capacitor).",
+  "scripts": {
+    "build": "node scripts/build-www.mjs",
+    "sync": "npm run build && cap sync android",
+    "open": "cap open android"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}

@@ -86,6 +86,8 @@
   }
   .icon-btn:active{transform:translateY(2px);}
   .icon-btn.is-off{opacity:.4; filter:grayscale(1);}
+  .title-top{display:flex; align-items:center; margin-bottom:4px;}
+  a.icon-btn.home-link{display:inline-flex; align-items:center; justify-content:center; text-decoration:none;}
   .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
 
   /* ---------- Title screen ---------- */
@@ -301,6 +303,9 @@
 
   <!-- ============ TITLE ============ -->
   <section class="screen active" id="screen-title">
+    <div class="title-top">
+      <a class="icon-btn home-link" href="../index.html" data-i18n-title="allGames" title="All games" aria-label="All games">🎮</a>
+    </div>
     <div class="hero">
       <div class="logo"><span class="em">🔤</span> <span data-i18n="title">Chaos Words</span> <span class="em">✨</span></div>
       <p class="tagline" data-i18n="tagline">Drag the mixed-up words to build the sentence!</p>
@@ -520,6 +525,7 @@ const I18N = {
     sound:"Sound",
     music:"Music",
     reset:"Reset progress",
+    allGames:"🎮 All games",
     customize:"🎨 Customize",
     cz_title:"Style your tiles",
     cz_tile:"Tile colour",
@@ -562,6 +568,7 @@ const I18N = {
     sound:"צליל",
     music:"מוזיקה",
     reset:"איפוס התקדמות",
+    allGames:"🎮 כל המשחקים",
     customize:"🎨 התאמה אישית",
     cz_title:"עיצוב האריחים",
     cz_tile:"צבע האריח",

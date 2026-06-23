@@ -1,0 +1,8 @@
+{
+  "appId": "com.example.kidsgames",
+  "appName": "KidsGames",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#bfe3ff"
+  }
+}

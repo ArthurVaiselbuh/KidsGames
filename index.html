@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>משחקי ילדים 🎈 — אוסף משחקים</title>
+<style>
+  /* ---------- Theme (shared with the games) ---------- */
+  :root{
+    --cream:#fff6e9;
+    --cream-2:#ffe9c9;
+    --ink:#5a4636;
+    --ink-soft:#8a7560;
+    --pink:#ff8fab;
+    --sky:#bfe3ff;
+    --sun:#ffd166;
+    --good:#5fbf6a;
+    --shadow:0 6px 0 rgba(0,0,0,.12), 0 12px 24px rgba(0,0,0,.12);
+    --radius:22px;
+    font-size:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Comic Sans MS","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 15% 10%, #fff 0 8%, transparent 9%),
+      radial-gradient(circle at 85% 20%, #fff 0 6%, transparent 7%),
+      linear-gradient(160deg, var(--sky), var(--cream) 45%, var(--cream-2));
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+    min-height:100%;
+  }
+  #app{ max-width:820px; margin:0 auto; padding:22px 16px 36px; }
+
+  header{ text-align:center; margin:8px 0 22px; }
+  .logo{ font-size:3rem; animation:bob 3s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-8px) rotate(2deg);} }
+  h1{ font-size:1.9rem; margin:6px 0 4px; color:var(--ink); }
+  .tagline{ font-size:1.05rem; color:var(--ink-soft); margin:0; }
+
+  .lang{
+    position:fixed; top:12px; inset-inline-end:12px;
+    font-family:inherit; font-size:.95rem; font-weight:800;
+    background:#fff; color:var(--ink); border:none; border-radius:999px;
+    padding:8px 14px; box-shadow:var(--shadow); cursor:pointer; z-index:5;
+  }
+  .lang:active{ transform:translateY(2px); }
+
+  /* ---------- Game grid ---------- */
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr));
+    gap:16px;
+  }
+  .card{
+    display:flex; align-items:center; gap:14px;
+    background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:16px 18px; text-decoration:none; color:inherit;
+    border:3px solid transparent; transition:transform .12s ease, border-color .12s ease;
+  }
+  .card:hover{ border-color:var(--sun); }
+  .card:active{ transform:translateY(3px); }
+  .card .emoji{ font-size:2.6rem; flex:0 0 auto; line-height:1; }
+  .card .txt{ min-width:0; }
+  .card .name{ display:block; font-size:1.25rem; font-weight:900; margin:0 0 3px; }
+  .card .sub{ display:block; font-size:.92rem; color:var(--ink-soft); margin:0; }
+
+  footer{ text-align:center; color:var(--ink-soft); font-size:.85rem; margin-top:26px; }
+
+  /* a few ambient floating balloons behind everything */
+  #bg{ position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+  #bg span{ position:absolute; font-size:2rem; opacity:.18; animation:float linear infinite; }
+  @keyframes float{ 0%{transform:translateY(10vh) rotate(0);} 100%{transform:translateY(-110vh) rotate(40deg);} }
+</style>
+</head>
+<body>
+  <div id="bg" aria-hidden="true"></div>
+  <button class="lang" id="lang-btn" type="button">English</button>
+
+  <div id="app">
+    <header>
+      <div class="logo">🎈</div>
+      <h1 id="h-title">משחקי ילדים</h1>
+      <p class="tagline" id="h-tag">בחרו משחק והתחילו לשחק!</p>
+    </header>
+
+    <nav class="grid" id="grid"></nav>
+
+    <footer id="foot">כל המשחקים עובדים גם ללא אינטרנט · עברית ואנגלית</footer>
+  </div>
+
+<script>
+"use strict";
+// Each game folder has its own index.html; relative links work both on
+// GitHub Pages and inside the bundled Capacitor WebView.
+const GAMES = [
+  { dir:"MathBakery",    emoji:"🧁", he:["מאפיית החשבון","פותרים תרגילים ומגישים פינוקים טעימים!"], en:["Math Bakery","Serve yummy treats by solving math!"] },
+  { dir:"FallingPlates", emoji:"🍽️", he:["צלחות נופלות","הקלידו את האותיות והצילו את הצלחות!"],   en:["Falling Plates","Type the letters to save the plates!"] },
+  { dir:"ChaosWords",    emoji:"🔤", he:["מילים מבולגנות","גררו את המילים המבולגנות ובנו את המשפט!"], en:["Chaos Words","Drag the mixed-up words to build the sentence!"] },
+  { dir:"MemoryLane",    emoji:"🧠", he:["שביל הזיכרון","הופכים קלפים ומוצאים את הזוגות התואמים!"],   en:["Memory Lane","Flip the cards and find the matching pairs!"] },
+  { dir:"ParkTheCar",    emoji:"🚗", he:["חנו את המכונית","היגוי אל החניה בלי להתנגש!"],            en:["Park the Car","Steer into the spot without bumping!"] },
+];
+
+const UI = {
+  he:{ dir:"rtl", other:"English", title:"משחקי ילדים", tag:"בחרו משחק והתחילו לשחק!", foot:"כל המשחקים עובדים גם ללא אינטרנט · עברית ואנגלית" },
+  en:{ dir:"ltr", other:"עברית",   title:"Kids Games",  tag:"Pick a game and start playing!", foot:"Every game works offline too · Hebrew & English" },
+};
+
+let lang = localStorage.getItem("kidsgames.lang") || "he";
+
+function render(){
+  const u = UI[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir = u.dir;
+  document.getElementById("lang-btn").textContent = u.other;
+  document.getElementById("h-title").textContent = u.title;
+  document.getElementById("h-tag").textContent = u.tag;
+  document.getElementById("foot").textContent = u.foot;
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  for(const g of GAMES){
+    const [name, sub] = g[lang];
+    const a = document.createElement("a");
+    a.className = "card";
+    a.href = "./" + g.dir + "/index.html";
+    a.innerHTML =
+      `<span class="emoji">${g.emoji}</span>` +
+      `<span class="txt"><span class="name">${name}</span><span class="sub">${sub}</span></span>`;
+    grid.appendChild(a);
+  }
+}
+
+document.getElementById("lang-btn").addEventListener("click", ()=>{
+  lang = (lang === "he" ? "en" : "he");
+  localStorage.setItem("kidsgames.lang", lang);
+  render();
+});
+
+// scatter a few drifting balloons
+(function balloons(){
+  const bg = document.getElementById("bg");
+  const set = ["🎈","🎈","⭐","🎈","☁️","⭐","🎈"];
+  for(let i=0;i<set.length;i++){
+    const s = document.createElement("span");
+    s.textContent = set[i];
+    s.style.left = (5 + i*14) + "%";
+    s.style.animationDuration = (14 + i*3) + "s";
+    s.style.animationDelay = (-i*4) + "s";
+    bg.appendChild(s);
+  }
+})();
+
+render();
+</script>
+</body>
+</html>
