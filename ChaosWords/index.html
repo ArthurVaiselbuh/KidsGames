@@ -85,6 +85,7 @@
     font-size:1.4rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.1);
   }
   .icon-btn:active{transform:translateY(2px);}
+  .icon-btn.is-off{opacity:.4; filter:grayscale(1);}
   .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
 
   /* ---------- Title screen ---------- */
@@ -157,7 +158,7 @@
     transition:border-color .15s, background .15s, transform .1s;
   }
   .slot.over{   /* a tile is hovering over this landing pad */
-    border-color:var(--accent); background:rgba(139,92,246,.12);
+    border-color:var(--pad, var(--accent)); background:rgba(139,92,246,.12);
     transform:scale(1.05);
   }
   .slot.hint{   /* gentle hint highlight for the correct word */
@@ -183,7 +184,7 @@
     display:inline-flex; align-items:center; justify-content:center;
     padding:12px 16px; border-radius:14px;
     font-weight:900; font-size:1.4rem; color:#fff;
-    background:var(--accent);
+    background:var(--tile, var(--accent));
     box-shadow:0 5px 0 rgba(0,0,0,.18), 0 8px 14px rgba(0,0,0,.14);
     text-shadow:0 2px 0 rgba(0,0,0,.18);
     cursor:grab; user-select:none; touch-action:none;
@@ -191,6 +192,9 @@
     transition:transform .12s ease, filter .12s;
   }
   .tile:active{cursor:grabbing;}
+  /* Hebrew tiles carry nikud (vowel points) — give the glyphs a little vertical room
+     so the marks above/below the letters aren't cramped or clipped. (LTR is untouched.) */
+  [dir="rtl"] .tile{ line-height:1.5; padding-top:9px; padding-bottom:13px; }
   /* each tile gets a slight playful tilt + a colour from its index */
   .tile.c0{background:var(--pink);}
   .tile.c1{background:var(--sky);}
@@ -269,6 +273,26 @@
     .slot{min-width:50px; min-height:48px;}
     .title-tiles .wt{font-size:1.05rem; padding:8px 11px;}
   }
+
+
+  /* ---------- Cosmetics customizer (overlay) ---------- */
+  .cz-wrap{position:fixed; inset:0; z-index:80; display:none; align-items:center;
+    justify-content:center; background:rgba(30,20,55,.5); padding:16px;}
+  .cz-wrap.open{display:flex;}
+  .cz-card{background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px; max-width:380px; width:100%; max-height:90vh; overflow:auto; text-align:center;}
+  .cz-title{font-weight:900; font-size:1.4rem; margin:2px 0 8px; color:var(--accent-deep);}
+  .cz-preview{display:flex; justify-content:center; gap:8px; margin:6px 0 12px;}
+  .cz-preview .tile{cursor:default;}
+  .cz-row{margin:12px 0; text-align:start;}
+  .cz-label{font-weight:800; font-size:.95rem; margin-bottom:7px; color:var(--ink);}
+  .cz-opts{display:flex; flex-wrap:wrap; gap:9px;}
+  .cz-sw{width:38px; height:38px; border-radius:50%; border:3px solid #fff; cursor:pointer;
+    padding:0; box-shadow:0 0 0 2px rgba(0,0,0,.14); transition:transform .08s;}
+  .cz-sw:active{transform:scale(.92);}
+  .cz-sw.sel{box-shadow:0 0 0 3px var(--ink);}
+  .cz-sw.auto{background:conic-gradient(#ff8fab,#ffd166,#5fbf6a,#4bb6e8,#8b5cf6,#ff8fab);}
+  .cz-done{margin-top:10px;}
 </style>
 </head>
 <body>
@@ -285,8 +309,10 @@
       </div>
       <div class="title-actions">
         <button class="btn big" id="play-btn" data-i18n="play">▶ Play</button>
+        <button class="btn ghost" id="customize-btn" data-i18n="customize">🎨 Customize</button>
         <div style="display:flex; gap:10px; align-items:center;">
           <button class="icon-btn" id="mute-btn-title" data-i18n-title="sound" title="Sound">🔊</button>
+          <button class="icon-btn" id="music-btn-title" data-i18n-title="music" title="Music">🎵</button>
           <button class="mini-link" id="lang-btn">עברית</button>
           <button class="mini-link" id="reset-btn" data-i18n="reset">Reset progress</button>
         </div>
@@ -297,7 +323,7 @@
   <!-- ============ LEVEL SELECT ============ -->
   <section class="screen" id="screen-select">
     <div class="select-head">
-      <button class="icon-btn" data-go="title">🏠</button>
+      <button class="icon-btn" data-go="title" data-i18n-title="map" title="Map">🏠</button>
       <div class="level-tag" style="flex:1"><span data-i18n="pickLevel">Pick a Level</span><small data-i18n="pickSub">your word adventure</small></div>
       <div class="lang-pill" id="lang-pill-select">🇬🇧 EN</div>
     </div>
@@ -312,19 +338,20 @@
       <div class="level-tag" id="play-level">Level<small>World</small></div>
       <div class="spacer"></div>
       <button class="icon-btn" id="mute-btn-play" data-i18n-title="sound" title="Sound">🔊</button>
+      <button class="icon-btn" id="music-btn-play" data-i18n-title="music" title="Music">🎵</button>
     </div>
 
     <div class="progress-row">
       <div class="round-count" id="round-count">📝 1/5</div>
-      <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+      <div class="bar" role="progressbar" aria-label="Level progress"><div class="bar-fill" id="bar-fill"></div></div>
     </div>
 
     <div class="board" id="board">
-      <div class="board-hint" id="board-hint" data-i18n="hint">Drag the words into the right order!</div>
-      <div class="slots" id="slots"></div>
-      <div class="reveal-pic" id="reveal-pic"></div>
+      <div class="board-hint" id="board-hint" data-i18n="hint" role="status" aria-live="polite">Drag the words into the right order!</div>
+      <div class="slots" id="slots" role="list" aria-label="Sentence slots"></div>
+      <div class="reveal-pic" id="reveal-pic" aria-hidden="true"></div>
       <div class="tray-label" data-i18n="trayLabel">Mixed-up words</div>
-      <div class="tray" id="tray"></div>
+      <div class="tray" id="tray" role="list" aria-label="Mixed-up words"></div>
       <div class="play-actions">
         <button class="btn ghost" id="shuffle-btn" data-i18n="reshuffle">🔀 Shuffle</button>
         <button class="btn ghost" id="hint-btn" data-i18n="hintBtn">💡 Hint</button>
@@ -349,8 +376,18 @@
 
 </div>
 <!-- floating drag ghost (filled in by JS) -->
-<div id="ghost" class="tile"></div>
-<div id="fx"></div>
+<div id="ghost" class="tile" aria-hidden="true"></div>
+<div id="fx" aria-hidden="true"></div>
+
+<!-- ============ COSMETICS CUSTOMIZER ============ -->
+<div class="cz-wrap" id="cz" role="dialog" aria-modal="true">
+  <div class="cz-card">
+    <div class="cz-title" data-i18n="cz_title">Style your tiles</div>
+    <div class="cz-preview" id="cz-preview" aria-hidden="true"></div>
+    <div id="cz-rows"></div>
+    <button class="btn green cz-done" id="cz-done" data-i18n="cz_done">Done</button>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -430,45 +467,45 @@ const SENTENCES = {
   },
   he:{
     easy:[
-      "החתול שלי שמח|🐱","אני אוהב תפוחים אדומים|🍎","הכלב יודע לרוץ|🐶","אנחנו משחקים כל היום|🎈",
-      "השמש מאוד חמה|☀️","אמא שלי טובה|💖","הציפור עפה גבוה|🐦","הדג שוחה במים|🐟",
-      "אני רואה כוכב|⭐","העוגה מאוד מתוקה|🍰","אנחנו אוהבים לשיר|🎵","הצפרדע צבעה ירוקה|🐸",
-      "אבא שלי גבוה|👨","הכדור הוא עגול|⚽","יש לי שתי ידיים|✋","הירח מאיר בלילה|🌙",
-      "הדוב הוא גדול|🐻","אנחנו אוכלים אוכל טעים|🍽️","הדבורה אוהבת פרחים|🐝","אני קופץ גבוה מאוד|🤸",
-      "הרכבת נוסעת מהר|🚆","החתול שלי רך|🐈","אנחנו קוראים ספרים טובים|📚","הגשם מאוד רטוב|🌧️",
-      "הברווז אומר קוואק|🦆","אני אוהב את הכלב|🐕","השלג מאוד קר|❄️","אנחנו רצים מהר מאוד|🏃",
-      "הינשוף מאוד חכם|🦉","הנעליים שלי כחולות|👟","העץ מאוד גבוה|🌳","אני שותה חלב קר|🥛",
-      "המכונית נוסעת מהר|🚗","אנחנו מחבקים את החברים|🤗","האריה יודע לשאוג|🦁","הכובע שלי אדום|🎩",
+      "הַחָתוּל שֶׁלִּי שָׂמֵחַ|🐱","אֲנִי אוֹהֵב תַּפּוּחִים אֲדוּמִּים|🍎","הַכֶּלֶב יוֹדֵעַ לָרוּץ|🐶","אֲנַחְנוּ מְשַׂחֲקִים כָּל הַיּוֹם|🎈",
+      "הַשֶּׁמֶשׁ מְאוֹד חַמָּה|☀️","אִמָּא שֶׁלִּי טוֹבָה|💖","הַצִּיפּוֹר עָפָה גָּבוֹהַּ|🐦","הַדָּג שׂוֹחֶה בַּמַּיִם|🐟",
+      "אֲנִי רוֹאֶה כּוֹכָב|⭐","הָעוּגָה מְאוֹד מְתוּקָה|🍰","אֲנַחְנוּ אוֹהֲבִים לָשִׁיר|🎵","הַצְּפַרְדֵּעַ צִבְעָהּ יְרוּקָּה|🐸",
+      "אַבָּא שֶׁלִּי גָּבוֹהַּ|👨","הַכַּדּוּר הוּא עָגוֹל|⚽","יֵשׁ לִי שְׁתֵּי יָדַיִם|✋","הַיָּרֵחַ מֵאִיר בַּלַּיְלָה|🌙",
+      "הַדּוֹב הוּא גָּדוֹל|🐻","אֲנַחְנוּ אוֹכְלִים אוֹכֶל טָעִים|🍽️","הַדְּבוֹרָה אוֹהֶבֶת פְּרָחִים|🐝","אֲנִי קוֹפֵץ גָּבוֹהַּ מְאוֹד|🤸",
+      "הָרַכֶּבֶת נוֹסַעַת מַהֵר|🚆","הַחָתוּל שֶׁלִּי רַךְ|🐈","אֲנַחְנוּ קוֹרְאִים סְפָרִים טוֹבִים|📚","הַגֶּשֶׁם מְאוֹד רָטוֹב|🌧️",
+      "הַבַּרְוָוז אוֹמֵר קְוָואק|🦆","אֲנִי אוֹהֵב אֶת הַכֶּלֶב|🐕","הַשֶּׁלֶג מְאוֹד קַר|❄️","אֲנַחְנוּ רָצִים מַהֵר מְאוֹד|🏃",
+      "הַיַּנְשׁוּף מְאוֹד חָכָם|🦉","הַנַּעֲלַיִם שֶׁלִּי כְּחוּלּוֹת|👟","הָעֵץ מְאוֹד גָּבוֹהַּ|🌳","אֲנִי שׁוֹתֶה חָלָב קַר|🥛",
+      "הַמְּכוֹנִית נוֹסַעַת מַהֵר|🚗","אֲנַחְנוּ מְחַבְּקִים אֶת הַחֲבֵרִים|🤗","הָאַרְיֵה יוֹדֵעַ לִשְׁאוֹג|🦁","הַכּוֹבַע שֶׁלִּי אָדוֹם|🎩",
     ],
     medium:[
-      "החתול הקטן משחק עם הכדור|🐱","אנחנו אוהבים לקרוא ספרים טובים|📚","הכלב שלי רץ בפארק הירוק|🐶",
-      "השמש זורחת גבוה בשמיים הכחולים|☀️","אני אוכל תפוח אדום ומתוק היום|🍎","הציפורים השמחות שרות בכל בוקר|🐦",
-      "אנחנו נוסעים לבית הספר באוטובוס|🚌","אמא שלי אופה עוגת שוקולד גדולה|🍰","הדגים שוחים במים הקרירים והצלולים|🐟",
-      "אריה אמיץ אחד גר בתוך הג׳ונגל|🦁","אנחנו משחקים בשלג הלבן כל החורף|⛄","הדבורה מזמזמת סביב הפרחים הצבעוניים|🐝",
-      "לחבר שלי יש ארנב לבן ורך|🐰","הטיל טס גבוה עד הירח הכסוף|🚀","אני אוהב לצייר בצבעים בהירים ויפים|🎨",
-      "הרכבת נוסעת מהר על המסילה הארוכה|🚆","אנחנו בונים מגדל חול גבוה בחוף|🏰","סבתא שלי מספרת את הסיפורים הכי טובים|👵",
-      "הגור הקטן מכשכש בזנב השמח שלו|🐕","אנחנו צופים בכוכבים הזוהרים בלילה|⭐","צפרדע ירוקה יושבת על בול עץ|🐸",
-      "פיל התינוק שותה הרבה מים קרים|🐘","אנחנו שרים שירים שמחים יחד בכל יום|🎵","האופניים האדומים שלי מהירים מאוד|🚲",
-      "הנמלים החרוצות נושאות פירורים קטנים הביתה|🐜","אני מצייר שמש צהובה וגדולה בשמיים|☀️","המורה הטובה עוזרת לנו ללמוד|👩‍🏫",
-      "אנחנו שותלים זרעים קטנים באדמה החמה|🌱","הדולפינים השמחים קופצים מתוך הים הכחול|🐬","הכרית הרכה שלי מונחת על המיטה|🛏️",
-      "החקלאי מאכיל את הפרות הרעבות בשדה|🐄","אנחנו מעיפים עפיפון ביום של רוח|🪁","ינשוף חכם וזקן מנהם בלילה החשוך|🦉",
+      "הַחָתוּל הַקָּטָן מְשַׂחֵק עִם הַכַּדּוּר|🐱","אֲנַחְנוּ אוֹהֲבִים לִקְרוֹא סְפָרִים טוֹבִים|📚","הַכֶּלֶב שֶׁלִּי רָץ בַּפַּארְק הַיָּרוֹק|🐶",
+      "הַשֶּׁמֶשׁ זוֹרַחַת גָּבוֹהַּ בַּשָּׁמַיִם הַכְּחוּלִּים|☀️","אֲנִי אוֹכֵל תַּפּוּחַ אָדוֹם וּמָתוֹק הַיּוֹם|🍎","הַצִּיפּוֹרִים הַשְּׂמֵחוֹת שָׁרוֹת בְּכָל בּוֹקֶר|🐦",
+      "אֲנַחְנוּ נוֹסְעִים לְבֵית הַסֵּפֶר בָּאוֹטוֹבּוּס|🚌","אִמָּא שֶׁלִּי אוֹפָה עוּגַת שׁוֹקוֹלָד גְּדוֹלָה|🍰","הַדָּגִים שׂוֹחִים בַּמַּיִם הַקְּרִירִים וְהַצְּלוּלִים|🐟",
+      "אַרְיֵה אַמִּיץ אֶחָד גָּר בְּתוֹךְ הַגְּ׳וּנְגֶּל|🦁","אֲנַחְנוּ מְשַׂחֲקִים בַּשֶּׁלֶג הַלָּבָן כָּל הַחוֹרֶף|⛄","הַדְּבוֹרָה מְזַמְזֶמֶת סָבִיב הַפְּרָחִים הַצִּבְעוֹנִיִּים|🐝",
+      "לֶחָבֵר שֶׁלִּי יֵשׁ אַרְנָב לָבָן וְרַךְ|🐰","הַטִּיל טָס גָּבוֹהַּ עַד הַיָּרֵחַ הַכָּסוּף|🚀","אֲנִי אוֹהֵב לְצַיֵּר בִּצְבָעִים בְּהִירִים וְיָפִים|🎨",
+      "הָרַכֶּבֶת נוֹסַעַת מַהֵר עַל הַמְּסִילָּה הָאֲרוּכָּה|🚆","אֲנַחְנוּ בּוֹנִים מִגְדַּל חוֹל גָּבוֹהַּ בַּחוֹף|🏰","סַבְתָּא שֶׁלִּי מְסַפֶּרֶת אֶת הַסִּיפּוּרִים הֲכִי טוֹבִים|👵",
+      "הַגּוּר הַקָּטָן מְכַשְׁכֵּשׁ בַּזָּנָב הַשָּׂמֵחַ שֶׁלּוֹ|🐕","אֲנַחְנוּ צוֹפִים בַּכּוֹכָבִים הַזּוֹהֲרִים בַּלַּיְלָה|⭐","צְפַרְדֵּעַ יְרוּקָּה יוֹשֶׁבֶת עַל בּוּל עֵץ|🐸",
+      "פִּיל הַתִּינוֹק שׁוֹתֶה הַרְבֵּה מַיִם קָרִים|🐘","אֲנַחְנוּ שָׁרִים שִׁירִים שְׂמֵחִים יַחַד בְּכָל יוֹם|🎵","הָאוֹפַנַּיִם הָאֲדוּמִּים שֶׁלִּי מְהִירִים מְאוֹד|🚲",
+      "הַנְּמָלִים הַחֲרוּצוֹת נוֹשְׂאוֹת פֵּירוּרִים קְטַנִּים הַבַּיְתָה|🐜","אֲנִי מְצַיֵּר שֶׁמֶשׁ צְהוּבָּה וּגְדוֹלָה בַּשָּׁמַיִם|☀️","הַמּוֹרָה הַטּוֹבָה עוֹזֶרֶת לָנוּ לִלְמוֹד|👩‍🏫",
+      "אֲנַחְנוּ שׁוֹתְלִים זְרָעִים קְטַנִּים בָּאֲדָמָה הַחַמָּה|🌱","הַדּוֹלְפִינִים הַשְּׂמֵחִים קוֹפְצִים מִתּוֹךְ הַיָּם הַכָּחוֹל|🐬","הַכָּרִית הָרַכָּה שֶׁלִּי מֻנַּחַת עַל הַמִּיטָה|🛏️",
+      "הַחַקְלַאי מַאֲכִיל אֶת הַפָּרוֹת הָרְעֵבוֹת בַּשָּׂדֶה|🐄","אֲנַחְנוּ מְעִיפִים עֲפִיפוֹן בְּיוֹם שֶׁל רוּחַ|🪁","יַנְשׁוּף חָכָם וְזָקֵן מְנַהֵם בַּלַּיְלָה הֶחָשׁוּךְ|🦉",
     ],
     hard:[
-      "השועל הפיקח קופץ מעל הכלב החום והעצלן|🦊","אנחנו צפינו בזיקוקים הצבעוניים מאירים את השמיים החשוכים|🎆",
-      "אחותי הקטנה אוהבת מאוד לרקוד בתוך הגשם|💃","האביר האמיץ רכב על הסוס שלו אל הטירה|🏰",
-      "קוף סקרן אחד טיפס גבוה על העץ הירוק|🐵","חילקנו יחד קערה גדולה של מרק עגבניות חם|🍲",
-      "הענק הטוב נופף לילדים הקטנים לשלום בידו|👋","החבר הכי טוב שלי ואני בנינו בית עץ|🌳",
-      "הפרפר הצבעוני נחת בעדינות על הפרח הצהוב והיפה|🦋","ארזנו את התיקים שלנו לטיול קיץ ארוך|🧳",
-      "האופה החרוץ הכין לחם טרי וחם מוקדם בבוקר|🍞","עכבר קטן אחד הסתתר מאחורי הדלת העתיקה|🐭",
-      "הילדים השמחים שיחקו משחקים כיפיים בחצר השטופה בשמש|🎮","אבא שלי ואני הלכנו לדוג ליד האגם השקט|🎣",
-      "הגור המנומנם התכרבל לו ליד האח החמה והנעימה|🐶","מצאנו מטבע זהב נוצץ אחד מתחת לסלע הגדול|🪙",
-      "הרופא הטוב עזר לילד החולה להרגיש הרבה יותר טוב|🩺","להקת אווזים גדולה עפה דרומה אל החורף הקר|🦢",
-      "הקוסם הקסום נופף בשרביט שלו ויצר כוכבים זוהרים|🧙","רכבנו על האופניים שלנו מסביב לעיירה השקטה|🚲",
-      "הזחל הרעב אכל לו דרך חמישה עלים ירוקים ועסיסיים|🐛","אמא שלי שתלה ורדים אדומים ויפים בתוך הגינה|🌹",
-      "ספינת הפיראטים הפליגה הרחק על פני האוקיינוס הכחול והעמוק|🏴‍☠️","צלינו פצפוצי מרשמלו רכים מעל מדורת המחנה הבוערת|🔥",
-      "הרובוט הקטן צפצף וגלגל את עצמו על הרצפה החלקה|🤖","קשת בענן הופיעה אחרי שהגשם הכבד של הקיץ פסק|🌈",
-      "הליצן העליז להטט בחמישה כדורים צבעוניים בתוך הקרקס|🤡","ספרנו יחד את כל הכוכבים הזוהרים בשמי הלילה|⭐",
-      "החקלאי החזק נשא על גבו את שקי התבואה הכבדים|🌾","סבא שלי סיפר לנו סיפור מצחיק וטוב לפני השינה|👴",
+      "הַשּׁוּעָל הַפִּיקֵּחַ קוֹפֵץ מֵעַל הַכֶּלֶב הַחוּם וְהָעַצְלָן|🦊","אֲנַחְנוּ צָפִינוּ בַּזִּיקּוּקִים הַצִּבְעוֹנִיִּים מְאִירִים אֶת הַשָּׁמַיִם הַחֲשׁוּכִים|🎆",
+      "אֲחוֹתִי הַקְּטַנָּה אוֹהֶבֶת מְאוֹד לִרְקוֹד בְּתוֹךְ הַגֶּשֶׁם|💃","הָאַבִּיר הָאַמִּיץ רָכַב עַל הַסּוּס שֶׁלּוֹ אֶל הַטִּירָה|🏰",
+      "קוֹף סַקְרָן אֶחָד טִיפֵּס גָּבוֹהַּ עַל הָעֵץ הַיָּרוֹק|🐵","חִילַּקְנוּ יַחַד קְעָרָה גְּדוֹלָה שֶׁל מָרָק עַגְבָנִיּוֹת חַם|🍲",
+      "הָעֲנָק הַטּוֹב נוֹפֵף לַיְלָדִים הַקְּטַנִּים לְשָׁלוֹם בְּיָדוֹ|👋","הֶחָבֵר הֲכִי טוֹב שֶׁלִּי וַאֲנִי בָּנִינוּ בֵּית עֵץ|🌳",
+      "הַפַּרְפַּר הַצִּבְעוֹנִי נָחַת בַּעֲדִינוּת עַל הַפֶּרַח הַצָּהוֹב וְהַיָּפֶה|🦋","אָרַזְנוּ אֶת הַתִּיקִים שֶׁלָּנוּ לְטִיּוּל קַיִץ אָרוֹךְ|🧳",
+      "הָאוֹפֶה הֶחָרוּץ הֵכִין לֶחֶם טָרִי וְחַם מוּקְדָּם בַּבּוֹקֶר|🍞","עַכְבָּר קָטָן אֶחָד הִסְתַּתֵּר מֵאֲחוֹרֵי הַדֶּלֶת הָעַתִּיקָה|🐭",
+      "הַיְלָדִים הַשְּׂמֵחִים שִׂיחֲקוּ מִשְׂחָקִים כֵּיפִיִּים בֶּחָצֵר הַשְּׁטוּפָה בַּשֶּׁמֶשׁ|🎮","אַבָּא שֶׁלִּי וַאֲנִי הָלַכְנוּ לָדוּג לְיַד הָאֲגַם הַשָּׁקֵט|🎣",
+      "הַגּוּר הַמְּנוּמְנָם הִתְכַּרְבֵּל לוֹ לְיַד הָאָח הַחַמָּה וְהַנְּעִימָה|🐶","מָצָאנוּ מַטְבֵּעַ זָהָב נוֹצֵץ אֶחָד מִתַּחַת לַסֶּלַע הַגָּדוֹל|🪙",
+      "הָרוֹפֵא הַטּוֹב עָזַר לַיֶּלֶד הַחוֹלֶה לְהַרְגִּישׁ הַרְבֵּה יוֹתֵר טוֹב|🩺","לַהֲקַת אֲוָוזִים גְּדוֹלָה עָפָה דָּרוֹמָה אֶל הַחוֹרֶף הַקַּר|🦢",
+      "הַקּוֹסֵם הַקָּסוּם נוֹפֵף בְּשַׁרְבִיט שֶׁלּוֹ וְיָצַר כּוֹכָבִים זוֹהֲרִים|🧙","רָכַבְנוּ עַל הָאוֹפַנַּיִם שֶׁלָּנוּ מִסָּבִיב לָעֲיָירָה הַשְּׁקֵטָה|🚲",
+      "הַזַּחַל הָרָעֵב אָכַל לוֹ דֶּרֶךְ חֲמִישָּׁה עָלִים יְרוּקִּים וַעֲסִיסִיִּים|🐛","אִמָּא שֶׁלִּי שָׁתְלָה וְרָדִים אֲדוּמִּים וְיָפִים בְּתוֹךְ הַגִּינָה|🌹",
+      "סְפִינַת הַפִּירָאטִים הִפְלִיגָה הַרְחֵק עַל פְּנֵי הָאוֹקְיָינוֹס הַכָּחוֹל וְהֶעָמוֹק|🏴‍☠️","צָלִינוּ פִּצְפּוּצֵי מַרְשְׁמֶלוֹ רַכִּים מֵעַל מְדוּרַת הַמַּחֲנֶה הַבּוֹעֶרֶת|🔥",
+      "הָרוֹבּוֹט הַקָּטָן צִפְצֵף וְגִלְגֵּל אֶת עַצְמוֹ עַל הָרִצְפָּה הַחֲלָקָה|🤖","קֶשֶׁת בֶּעָנָן הוֹפִיעָה אַחֲרֵי שֶׁהַגֶּשֶׁם הַכָּבֵד שֶׁל הַקַּיִץ פָּסַק|🌈",
+      "הַלֵּיצָן הָעַלִּיז לִהֲטֵט בַּחֲמִישָּׁה כַּדּוּרִים צִבְעוֹנִיִּים בְּתוֹךְ הַקִּרְקָס|🤡","סָפַרְנוּ יַחַד אֶת כָּל הַכּוֹכָבִים הַזּוֹהֲרִים בִּשְׁמֵי הַלַּיְלָה|⭐",
+      "הַחַקְלַאי הֶחָזָק נָשָׂא עַל גַּבּוֹ אֶת שַׂקֵּי הַתְּבוּאָה הַכְּבֵדִים|🌾","סַבָּא שֶׁלִּי סִיפֵּר לָנוּ סִיפּוּר מַצְחִיק וְטוֹב לִפְנֵי הַשֵּׁינָה|👴",
     ],
   },
 };
@@ -481,7 +518,14 @@ const I18N = {
     tagline:"Drag the mixed-up words to build the sentence!",
     play:"▶ Play",
     sound:"Sound",
+    music:"Music",
     reset:"Reset progress",
+    customize:"🎨 Customize",
+    cz_title:"Style your tiles",
+    cz_tile:"Tile colour",
+    cz_pad:"Landing pads",
+    cz_auto:"Themed",
+    cz_done:"Done",
     pickLevel:"Pick a Level",
     pickSub:"your word adventure",
     back:"Back",
@@ -516,7 +560,14 @@ const I18N = {
     tagline:"גררו את המילים המבולגנות ובנו את המשפט!",
     play:"▶ שחקו",
     sound:"צליל",
+    music:"מוזיקה",
     reset:"איפוס התקדמות",
+    customize:"🎨 התאמה אישית",
+    cz_title:"עיצוב האריחים",
+    cz_tile:"צבע האריח",
+    cz_pad:"משבצות",
+    cz_auto:"לפי הנושא",
+    cz_done:"סיום",
     pickLevel:"בחרו שלב",
     pickSub:"הרפתקת המילים שלך",
     back:"חזרה",
@@ -562,15 +613,20 @@ function mistakesText(m){ return m===0 ? t("perfect") : (m===1 ? t("oops_one") :
 //  since the sentence content differs by language)
 // =========================================================
 const SAVE_KEY = "chaosWords.save";
+// Player-chosen cosmetics ("default" = follow the per-level themed accent).
+const DEFAULT_COSMETICS = {tile:"default", pad:"default"};
 const DEFAULT_SAVE = {
-  lang:DEFAULT_LANG, muted:false,
+  lang:DEFAULT_LANG, muted:false, music:true,
+  cosmetics:{...DEFAULT_COSMETICS},
   progress:{ he:{unlockedLevel:0, starsByLevel:{}}, en:{unlockedLevel:0, starsByLevel:{}} },
 };
 function loadSave(){
   try{
     const raw = localStorage.getItem(SAVE_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
+    const p = raw ? JSON.parse(raw) : {};
+    const parsed = (p && typeof p === "object") ? p : {};
     const s = {...DEFAULT_SAVE, ...parsed};
+    s.cosmetics = {...DEFAULT_COSMETICS, ...(parsed.cosmetics||{})};
     s.progress = {...DEFAULT_SAVE.progress, ...(parsed.progress||{})};
     for(const lng of ["he","en"]){
       s.progress[lng] = {unlockedLevel:0, starsByLevel:{}, ...(s.progress[lng]||{})};
@@ -587,7 +643,6 @@ function prog(){ return save.progress[save.lang]; }   // progress for the curren
 //  Helpers
 // =========================================================
 const $ = sel => document.querySelector(sel);
-const randInt = (lo,hi) => lo + Math.floor(Math.random()*(hi-lo+1));
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
@@ -601,27 +656,154 @@ function parseSentence(entry){
 // =========================================================
 //  Sound (tiny Web Audio jingles — no files)
 // =========================================================
-let audioCtx = null;
-function beep(freq, start, dur, type="sine", gain=0.15){
+// Pure Web Audio: no files, no libraries, no network.
+//   tone()  = one ADSR voice (optional detune/glide/filter/echo)
+//   noise() = filtered noise burst for percussive cues
+//   arp()   = quick chord/arpeggio for happy cues
+// A shared compressor + a feedback-delay "sparkle" send keep stacked
+// notes from clipping and add a touch of space.
+let audioCtx = null, sfxBus = null, musicBus = null, fxDelay = null;
+const midi = m => 440 * Math.pow(2, (m - 69) / 12);   // MIDI note → Hz
+function audio(){
+  if(audioCtx) return audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  try{ audioCtx = new AC(); }catch(e){ return null; }
+  const comp = audioCtx.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.knee.value = 26; comp.ratio.value = 3.5;
+  comp.attack.value = 0.004; comp.release.value = 0.25; comp.connect(audioCtx.destination);
+  fxDelay = audioCtx.createDelay(0.5); fxDelay.delayTime.value = 0.17;
+  const fb = audioCtx.createGain(); fb.gain.value = 0.24;
+  const wet = audioCtx.createGain(); wet.gain.value = 0.45;
+  fxDelay.connect(fb); fb.connect(fxDelay); fxDelay.connect(wet); wet.connect(comp);
+  sfxBus = audioCtx.createGain(); sfxBus.gain.value = 0.85; sfxBus.connect(comp);
+  musicBus = audioCtx.createGain(); musicBus.gain.value = 0.0001; musicBus.connect(comp);
+  return audioCtx;
+}
+function audioReady(){ const c = audio(); if(c && c.state === "suspended") c.resume(); return c; }
+function tone(o){
+  const ctx = audioReady(); if(!ctx) return;
+  const t0 = (o.at != null) ? o.at : ctx.currentTime + (o.t || 0);
+  const dur = o.dur != null ? o.dur : 0.2;
+  const peak = o.gain != null ? o.gain : 0.15;
+  const atk = o.attack != null ? o.attack : 0.012;
+  const rel = o.release != null ? o.release : Math.min(dur, 0.18);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + atk);
+  g.gain.setValueAtTime(peak, t0 + Math.max(atk, dur - rel));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let sink = g;
+  if(o.cutoff){
+    const lp = ctx.createBiquadFilter(); lp.type = o.filter || "lowpass";
+    lp.frequency.value = o.cutoff; lp.Q.value = o.q != null ? o.q : 0.7;
+    lp.connect(g); sink = lp;
+  }
+  for(const d of (o.fat ? [-6, 6] : [0])){
+    const osc = ctx.createOscillator();
+    osc.type = o.type || "sine";
+    osc.frequency.setValueAtTime(o.freq, t0);
+    if(o.glideTo) osc.frequency.exponentialRampToValueAtTime(o.glideTo, t0 + dur);
+    osc.detune.value = (o.detune || 0) + d;
+    osc.connect(sink); osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+  g.connect(o.bus || sfxBus);
+  if(o.echo && fxDelay) g.connect(fxDelay);
+}
+function noise(o){
+  const ctx = audioReady(); if(!ctx) return;
+  const t0 = (o.at != null) ? o.at : ctx.currentTime + (o.t || 0);
+  const dur = o.dur != null ? o.dur : 0.2;
+  const n = Math.max(1, Math.floor(ctx.sampleRate * dur));
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  const curve = o.curve != null ? o.curve : 2;
+  for(let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, curve);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = o.filter || "lowpass";
+  filt.frequency.value = o.cutoff != null ? o.cutoff : 1200;
+  filt.Q.value = o.q != null ? o.q : 0.8;
+  const g = ctx.createGain(); g.gain.value = o.gain != null ? o.gain : 0.15;
+  src.connect(filt); filt.connect(g); g.connect(o.bus || sfxBus);
+  if(o.echo && fxDelay) g.connect(fxDelay);
+  src.start(t0); src.stop(t0 + dur + 0.02);
+}
+function arp(root, intervals, opts){
+  const o = opts || {};
+  intervals.forEach((iv, i) => tone({
+    freq: midi(root + iv), t: (o.t || 0) + i * (o.step != null ? o.step : 0.09),
+    dur: o.dur != null ? o.dur : 0.3, type: o.type || "triangle",
+    gain: o.gain != null ? o.gain : 0.13, attack: 0.006, release: 0.22,
+    echo: true, fat: o.fat, cutoff: o.cutoff || 2600
+  }));
+}
+// Back-compat: existing call sites use beep(freq,start,dur,type,gain).
+function beep(freq, start, dur, type = "sine", gain = 0.15){
   if(save.muted) return;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const t0 = audioCtx.currentTime + start;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = type; osc.frequency.value = freq;
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(gain, t0+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(t0); osc.stop(t0+dur);
-  }catch(e){}
+  tone({ freq, t: start, dur, type, gain, cutoff: (type === "square" || type === "sawtooth") ? 2800 : 0 });
 }
 function playSound(type){
-  if(type==="place" || type==="snap"){ beep(523,0,.06,"triangle",.10); beep(784,.05,.08,"triangle",.09); }
-  else if(type==="correct" || type==="win"){ [523,659,784,1046].forEach((f,i)=>beep(f,i*.10,.22,"triangle")); }
-  else if(type==="wrong"){ beep(200,0,.16,"sawtooth",.08); }
-  else if(type==="tap"){ beep(440,0,.05,"square",.06); }
+  if(save.muted) return;
+  if(type==="place" || type==="snap"){ tone({freq:523,dur:0.07,type:"triangle",gain:0.09,attack:0.003,release:0.05,cutoff:3000}); tone({freq:784,t:0.05,dur:0.1,type:"triangle",gain:0.08,echo:true,cutoff:3200}); }
+  else if(type==="correct" || type==="win"){ arp(67,[0,4,7,12,16],{step:0.09,gain:0.12,dur:0.36,fat:true}); }
+  else if(type==="wrong"){ tone({freq:300,glideTo:180,dur:0.22,type:"sine",gain:0.11,release:0.2,cutoff:1400}); }
+  else if(type==="tap"){ tone({freq:560,dur:0.06,type:"triangle",gain:0.07,attack:0.003,release:0.05,cutoff:3000}); }
+}
+
+// Ambient music — generative loop via a lookahead scheduler.
+// Bass + pad per bar, sprinkled pentatonic melody. Own bus, low volume under the SFX.
+const MUSIC = { tempo:100, root:67, wave:"triangle", vol:0.40,
+  scale:[0,2,4,7,9], prog:[0,5,7,5], chord:[0,4,7], melodyAt:[2,3,5,6,7], shaker:false };
+let musicTimer = null, musicBeat = 0, musicNextT = 0, musicPlaying = false;
+function musicStep(at, eighth){
+  const m = MUSIC, SPB = 8, step = musicBeat % SPB;
+  const cr = m.root + m.prog[Math.floor(musicBeat / SPB) % m.prog.length];
+  if(step === 0){
+    tone({ at, freq: midi(cr - 12), dur: eighth * SPB * 0.92, type: "sine", gain: 0.085, attack: 0.05, release: 0.7, bus: musicBus });
+    m.chord.forEach((iv, k) => tone({ at: at + k * 0.012, freq: midi(cr + iv), dur: eighth * SPB * 0.96, type: m.wave, gain: 0.04, attack: 0.3, release: 0.9, fat: true, cutoff: 1900, bus: musicBus }));
+  } else if(step === 4){
+    tone({ at, freq: midi(cr - 12), dur: eighth * 3, type: "sine", gain: 0.055, attack: 0.04, release: 0.4, bus: musicBus });
+  }
+  if(m.melodyAt.includes(step) && Math.random() < 0.7){
+    const deg = m.scale[Math.floor(Math.random() * m.scale.length)] + (Math.random() < 0.25 ? 12 : 0);
+    tone({ at, freq: midi(cr + 12 + deg), dur: 0.34, type: "triangle", gain: 0.05, attack: 0.006, release: 0.3, echo: true, cutoff: 3200, bus: musicBus });
+  }
+  if(m.shaker && step % 2 === 1) noise({ at, dur: 0.05, gain: 0.012, filter: "highpass", cutoff: 6000, curve: 1, bus: musicBus });
+}
+function musicTick(){
+  const ctx = audioCtx; if(!ctx || !musicPlaying) return;
+  const eighth = 60 / MUSIC.tempo / 2;
+  while(musicNextT < ctx.currentTime + 0.12){ musicStep(musicNextT, eighth); musicNextT += eighth; musicBeat++; }
+}
+function startMusic(){
+  if(musicPlaying || save.muted || !save.music) return;
+  const ctx = audioReady(); if(!ctx) return;
+  musicPlaying = true; musicBeat = 0; musicNextT = ctx.currentTime + 0.18;
+  musicBus.gain.cancelScheduledValues(ctx.currentTime);
+  musicBus.gain.setValueAtTime(0.0001, ctx.currentTime);
+  musicBus.gain.exponentialRampToValueAtTime(MUSIC.vol, ctx.currentTime + 1.6);
+  musicTimer = setInterval(musicTick, 25);
+}
+function stopMusic(){
+  if(!musicPlaying) return;
+  musicPlaying = false;
+  if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
+  const ctx = audioCtx; if(!ctx || !musicBus) return;
+  const now = ctx.currentTime;
+  musicBus.gain.cancelScheduledValues(now);
+  musicBus.gain.setValueAtTime(Math.max(0.0001, musicBus.gain.value), now);
+  musicBus.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+}
+function maybeStartMusic(){ if(save.music && !save.muted) startMusic(); }
+// Unlock the AudioContext + start music on the very first interaction.
+["pointerdown","keydown"].forEach(ev => window.addEventListener(ev, function k(){ audioReady(); maybeStartMusic(); }, { once:true }));
+function refreshMusicBtn(){
+  ["#music-btn-title","#music-btn-play"].forEach(sel => { const b = $(sel); if(b){ b.textContent = "🎵"; b.classList.toggle("is-off", !save.music); } });
+}
+function toggleMusic(){
+  save.music = !save.music; persist(); refreshMusicBtn();
+  if(save.music){ maybeStartMusic(); if(!save.muted) playSound("tap"); } else stopMusic();
 }
 
 // =========================================================
@@ -681,6 +863,7 @@ const game = {
   slots:[],            // slotEl[i] -> tile id currently in slot i, or null
   solved:false,        // current round already solved (lock input)
   pool:[],             // remaining sentence entries for this level (no repeats)
+  token:0,             // bumped on every (re)deal; guards deferred timeouts against stale rounds
 };
 
 // Start a level: build a no-repeat queue of sentences from this tier's pool.
@@ -705,6 +888,7 @@ function startLevel(i){
 
 // Deal the next sentence (or finish the level).
 function nextRound(){
+  endDrag();   // abandon any in-flight drag so the ghost/listeners don't leak across deals
   const lv = LEVELS[game.levelIndex];
   if(game.roundIndex >= lv.rounds){ completeLevel(); return; }
 
@@ -716,6 +900,7 @@ function nextRound(){
   game.emoji = parsed.emoji;
   game.roundMistakes = 0;
   game.solved = false;
+  game.token++;        // invalidate any pending timeouts from the previous round/deal
 
   // build tile objects: each word becomes a positioned token (id + word) so that
   // duplicate words (e.g. "the cat saw the dog") are tracked independently.
@@ -746,6 +931,7 @@ function buildSlots(){
     const s = document.createElement("div");
     s.className = "slot";
     s.dataset.slot = i;          // logical index — validation is index-based (RTL-safe)
+    s.setAttribute("role", "listitem");
     slotsEl.appendChild(s);
   }
 }
@@ -773,6 +959,8 @@ function makeTileEl(tile){
   el.className = `tile ${tile.colorClass} ${tilt}`;
   el.textContent = tile.word;
   el.dataset.id = tile.id;
+  el.setAttribute("role", "listitem");
+  el.setAttribute("aria-label", tile.word);
   el.addEventListener("pointerdown", onPointerDown);
   return el;
 }
@@ -782,10 +970,13 @@ function makeTileEl(tile){
 //  We move tiles between the tray and the logical slots using a
 //  floating ghost element; the original tile is hidden while dragging.
 // =========================================================
-const drag = { active:false, tileId:null, el:null, fromSlot:null, pointerId:null };
+const drag = { active:false, el:null, fromSlot:null, pointerId:null, overSlot:null };
+const ghostEl = $("#ghost");
 
 function onPointerDown(e){
   if(game.solved) return;            // round already won — ignore
+  if(drag.active) return;            // ignore a second finger while a drag is in progress
+  if(e.button!=null && e.button!==0) return;   // primary button / touch only
   const el = e.currentTarget;
   e.preventDefault();
   startDrag(el, e);
@@ -794,17 +985,13 @@ function onPointerDown(e){
 function startDrag(el, e){
   drag.active = true;
   drag.el = el;
-  drag.tileId = +el.dataset.id;
   drag.pointerId = e.pointerId;
   // which slot (if any) did this tile come from?
-  const parentSlot = el.parentElement.classList.contains("slot") ? +el.parentElement.dataset.slot : null;
-  drag.fromSlot = parentSlot;
+  drag.fromSlot = el.parentElement.classList.contains("slot") ? +el.parentElement.dataset.slot : null;
 
-  // set up the floating ghost to mirror the tile
-  const ghost = $("#ghost");
-  ghost.textContent = el.textContent;
-  ghost.className = el.className.replace("dragging","") + " on";  // copy colour/tilt classes
-  ghost.classList.remove("dragging","landing","wrong","celebrate");
+  // set up the floating ghost to mirror the tile (colour/tilt classes, minus drag-state ones)
+  ghostEl.textContent = el.textContent;
+  ghostEl.className = el.className.replace(/\b(dragging|landing|wrong|celebrate)\b/g,"").trim() + " on";
   moveGhost(e.clientX, e.clientY);
 
   el.classList.add("dragging");
@@ -815,18 +1002,22 @@ function startDrag(el, e){
 }
 
 function moveGhost(x,y){
-  const ghost = $("#ghost");
-  ghost.style.left = x+"px";
-  ghost.style.top = y+"px";
+  ghostEl.style.left = x+"px";
+  ghostEl.style.top = y+"px";
+}
+
+// Highlight a single landing pad, clearing the previous one (avoids re-scanning the DOM).
+function setOverSlot(slot){
+  if(drag.overSlot===slot) return;
+  if(drag.overSlot) drag.overSlot.classList.remove("over");
+  if(slot) slot.classList.add("over");
+  drag.overSlot = slot;
 }
 
 function onPointerMove(e){
-  if(!drag.active) return;
+  if(!drag.active || e.pointerId!==drag.pointerId) return;
   moveGhost(e.clientX, e.clientY);
-  // highlight the landing pad under the pointer
-  const slot = slotUnder(e.clientX, e.clientY);
-  document.querySelectorAll(".slot.over").forEach(s=>s.classList.remove("over"));
-  if(slot) slot.classList.add("over");
+  setOverSlot(slotUnder(e.clientX, e.clientY));
 }
 
 // Which slot element (if any) is under this point?
@@ -839,36 +1030,43 @@ function slotUnder(x,y){
       return el.parentElement;
     }
   }
-  // also detect a drop onto the tray area
-  return null;
+  return null;   // not over any slot (caller decides whether it's the tray or dead space)
 }
 
 function onPointerUp(e){
-  if(!drag.active) return;
+  if(!drag.active || e.pointerId!==drag.pointerId) return;
+  const el = drag.el;
+  const fromSlot = drag.fromSlot;
+  endDrag();   // tears down listeners, ghost and the .over highlight first
+
+  // pointercancel (or a pointerup fired outside the window) has no reliable
+  // drop coordinates — treat it as "leave the tile where it logically belongs"
+  if(e.type==="pointercancel"){
+    if(fromSlot!==null) returnToTray(el, fromSlot);
+    return;
+  }
+
+  const targetSlot = slotUnder(e.clientX, e.clientY);
+  if(targetSlot){
+    dropIntoSlot(el, targetSlot, fromSlot);
+  }else if(isOverTray(e.clientX, e.clientY) || fromSlot!==null){
+    // dropped on the tray (or anywhere off a slot) → send the tile back to the tray
+    returnToTray(el, fromSlot);
+  }
+  // else: dropped in dead space coming from the tray → leave it in the tray (no-op)
+}
+
+// Tear down an in-flight drag: remove window listeners, hide the ghost, clear the
+// highlight and the original tile's drag state. Safe to call even if no drag is active.
+function endDrag(){
   window.removeEventListener("pointermove", onPointerMove);
   window.removeEventListener("pointerup", onPointerUp);
   window.removeEventListener("pointercancel", onPointerUp);
-
-  const ghost = $("#ghost");
-  ghost.classList.remove("on");
-
-  document.querySelectorAll(".slot.over").forEach(s=>s.classList.remove("over"));
-
-  const targetSlot = slotUnder(e.clientX, e.clientY);
-  const overTray = isOverTray(e.clientX, e.clientY);
-  const el = drag.el;
-  el.classList.remove("dragging");
-
-  if(targetSlot){
-    dropIntoSlot(el, targetSlot);
-  }else if(overTray || drag.fromSlot!==null){
-    // dropped on the tray (or anywhere off a slot) → send the tile back to the tray
-    returnToTray(el);
-  }
-  // else: dropped in dead space coming from the tray → leave it in the tray (no-op)
-
+  ghostEl.classList.remove("on");
+  setOverSlot(null);
+  if(drag.el) drag.el.classList.remove("dragging");
   drag.active = false;
-  drag.el = null; drag.tileId = null; drag.fromSlot = null; drag.pointerId = null;
+  drag.el = null; drag.fromSlot = null; drag.pointerId = null;
 }
 
 // Is this point over the tray region?
@@ -878,20 +1076,21 @@ function isOverTray(x,y){
 }
 
 // Place a tile into a slot; if occupied, swap the resident tile back appropriately.
-function dropIntoSlot(el, slotEl){
+// fromSlot is the slot the dragged tile came from (or null if it came from the tray).
+function dropIntoSlot(el, slotEl, fromSlot){
   const slotIdx = +slotEl.dataset.slot;
   const resident = slotEl.querySelector(".tile");
 
   // clear the tile's old position bookkeeping
-  if(drag.fromSlot!==null) game.slots[drag.fromSlot] = null;
+  if(fromSlot!==null) game.slots[fromSlot] = null;
 
   if(resident && resident!==el){
     // swap: move the resident either to the dragged tile's old slot, or to the tray
-    if(drag.fromSlot!==null){
+    if(fromSlot!==null){
       // place resident into the slot we came from
-      const fromSlotEl = $(`.slot[data-slot="${drag.fromSlot}"]`);
+      const fromSlotEl = $(`.slot[data-slot="${fromSlot}"]`);
       fromSlotEl.appendChild(resident);
-      game.slots[drag.fromSlot] = +resident.dataset.id;
+      game.slots[fromSlot] = +resident.dataset.id;
     }else{
       // we came from the tray → bump the resident back to the tray
       $("#tray").appendChild(resident);
@@ -901,17 +1100,22 @@ function dropIntoSlot(el, slotEl){
   slotEl.innerHTML = "";        // clear (resident already moved out if it existed)
   slotEl.appendChild(el);
   game.slots[slotIdx] = +el.dataset.id;
-  el.classList.add("landing");
-  setTimeout(()=>el.classList.remove("landing"), 300);
+  popTile(el);
   playSound("snap");
   checkSolved();
 }
 
 // Send a tile back to the tray.
-function returnToTray(el){
-  if(drag.fromSlot!==null) game.slots[drag.fromSlot] = null;
+function returnToTray(el, fromSlot){
+  if(fromSlot!==null) game.slots[fromSlot] = null;
   $("#tray").appendChild(el);
   playSound("tap");
+}
+
+// Brief snap-into-slot pop animation, self-cleaning.
+function popTile(el){
+  el.classList.add("landing");
+  setTimeout(()=>el.classList.remove("landing"), 300);
 }
 
 // =========================================================
@@ -960,7 +1164,13 @@ function onRoundWin(){
 
   $("#bar-fill").style.width = ((game.roundIndex+1)/LEVELS[game.levelIndex].rounds*100)+"%";
 
-  setTimeout(()=>{ game.roundIndex++; nextRound(); }, 1500);
+  // guard against a re-deal (e.g. language switch / replay) happening during the delay,
+  // which would otherwise double-advance the round counter
+  const tokenAtWin = game.token;
+  setTimeout(()=>{
+    if(game.token!==tokenAtWin) return;
+    game.roundIndex++; nextRound();
+  }, 1500);
 }
 
 // Gentle hint: after a couple of wrong tries (or on the Hint button), reveal the
@@ -1005,8 +1215,7 @@ function showHint(){
   game.slots[slotIdx] = chosen.id;
   slotEl.classList.add("hint");
   setTimeout(()=>slotEl.classList.remove("hint"), 1200);
-  tileEl.classList.add("landing");
-  setTimeout(()=>tileEl.classList.remove("landing"), 300);
+  popTile(tileEl);
   $("#board-hint").textContent = t("hintShown");
   playSound("snap");
   game.mistakes++;            // a hint counts like a small mistake (affects stars)
@@ -1104,7 +1313,7 @@ function refreshMute(){
   $("#mute-btn-title").textContent = icon;
   $("#mute-btn-play").textContent = icon;
 }
-function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(!save.muted) playSound("tap"); }
+function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(save.muted){ stopMusic(); } else { playSound("tap"); maybeStartMusic(); } }
 
 function applyLanguage(){
   if(!I18N[save.lang]) save.lang = DEFAULT_LANG;
@@ -1124,25 +1333,73 @@ document.addEventListener("click", e=>{
   const go = e.target.closest("[data-go]");
   if(go) showScreen(go.getAttribute("data-go"));
 });
+// =========================================================
+//  Cosmetics customizer (tile + landing-pad colour; "default" = themed accent)
+// =========================================================
+const COSMETIC_OPTS = [
+  {key:"tile", labelKey:"cz_tile",
+    colors:["#8b5cf6","#ff6f91","#ff8a3d","#ffb703","#2bb673","#16a3c9","#5a7bef","#e23b6d","#7a4a8a","#3a3f4a"]},
+  {key:"pad", labelKey:"cz_pad",
+    colors:["#8b5cf6","#ff6f91","#ff8a3d","#ffb703","#2bb673","#16a3c9","#5a7bef","#e23b6d"]},
+];
+// Apply chosen colours via CSS vars; "default" falls back to the per-level accent.
+function applyCosmetics(){
+  const r = document.documentElement.style, c = save.cosmetics;
+  if(c.tile==="default") r.removeProperty("--tile"); else r.setProperty("--tile", c.tile);
+  if(c.pad==="default")  r.removeProperty("--pad");  else r.setProperty("--pad",  c.pad);
+}
+function renderCustomizer(){
+  const prev = $("#cz-preview");
+  if(prev) prev.innerHTML = `<span class="tile">Aa</span><span class="tile">Bb</span>`;
+  const rows = $("#cz-rows"); rows.innerHTML = "";
+  COSMETIC_OPTS.forEach(cat=>{
+    const cur = save.cosmetics[cat.key];
+    const row = document.createElement("div"); row.className = "cz-row";
+    const lbl = document.createElement("div"); lbl.className = "cz-label"; lbl.textContent = t(cat.labelKey);
+    const opts = document.createElement("div"); opts.className = "cz-opts";
+    const addSw = (val)=>{
+      const b = document.createElement("button"); b.type = "button";
+      b.className = "cz-sw" + (val==="default"?" auto":"") + (cur===val ? " sel" : "");
+      if(val!=="default") b.style.background = val;
+      b.setAttribute("aria-label", val==="default" ? t("cz_auto") : val);
+      b.addEventListener("click", ()=>setCosmetic(cat.key, val));
+      opts.appendChild(b);
+    };
+    addSw("default");
+    cat.colors.forEach(addSw);
+    row.appendChild(lbl); row.appendChild(opts); rows.appendChild(row);
+  });
+}
+function setCosmetic(key,val){ save.cosmetics[key]=val; persist(); applyCosmetics(); renderCustomizer(); playSound("tap"); }
+function openCustomizer(){ renderCustomizer(); $("#cz").classList.add("open"); }
+function closeCustomizer(){ $("#cz").classList.remove("open"); }
+
 $("#play-btn").addEventListener("click", ()=>{ playSound("tap"); showScreen("select"); });
+$("#customize-btn").addEventListener("click", ()=>{ playSound("tap"); openCustomizer(); });
+$("#cz-done").addEventListener("click", ()=>{ playSound("tap"); closeCustomizer(); });
+$("#cz").addEventListener("click", e=>{ if(e.target.id==="cz") closeCustomizer(); });
 $("#mute-btn-title").addEventListener("click", toggleMute);
 $("#mute-btn-play").addEventListener("click", toggleMute);
+$("#music-btn-title").addEventListener("click", toggleMusic);
+$("#music-btn-play").addEventListener("click", toggleMusic);
 $("#lang-btn").addEventListener("click", toggleLanguage);
 $("#shuffle-btn").addEventListener("click", reshuffleTray);
 $("#hint-btn").addEventListener("click", showHint);
 $("#reset-btn").addEventListener("click", ()=>{
   if(confirm(t("resetConfirm"))){
-    const lang = save.lang;                   // keep the chosen language across a reset
+    const lang = save.lang, cosmetics = {...save.cosmetics};   // keep language + cosmetics
     save = JSON.parse(JSON.stringify(DEFAULT_SAVE));
-    save.lang = lang;
-    persist(); refreshMute(); applyLanguage();
+    save.lang = lang; save.cosmetics = cosmetics;
+    persist(); refreshMute(); applyCosmetics(); applyLanguage();
     alert(t("resetDone"));
   }
 });
 
 // init
 buildBackground();
+applyCosmetics();
 refreshMute();
+refreshMusicBtn();
 applyLanguage();
 </script>
 </body>

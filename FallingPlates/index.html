@@ -69,6 +69,7 @@
     font-size:1.4rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.1);
   }
   .icon-btn:active{transform:translateY(2px);}
+  .icon-btn.is-off{opacity:.4; filter:grayscale(1);}
   .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
 
   /* ---------- Title screen ---------- */
@@ -358,6 +359,30 @@
     .plate .pic{font-size:1.8rem;}
     .baker .body{width:170px;}   /* catch point adapts automatically */
   }
+
+
+  /* the baker's jacket follows the chosen cosmetic colour */
+  .jacket{fill:var(--jacket, #ffffff);}
+
+  /* ---------- Cosmetics customizer (overlay) ---------- */
+  .cz-wrap{position:fixed; inset:0; z-index:80; display:none; align-items:center;
+    justify-content:center; background:rgba(20,30,45,.5); padding:16px;}
+  .cz-wrap.open{display:flex;}
+  .cz-card{background:var(--cream,#fff8ef); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px; max-width:380px; width:100%; max-height:90vh; overflow:auto; text-align:center;}
+  .cz-title{font-weight:900; font-size:1.4rem; margin:2px 0 8px; color:var(--blue-deep,#3a7fd6);}
+  .cz-preview{display:flex; justify-content:center; align-items:center; gap:14px; height:90px; margin:4px 0 12px;}
+  .cz-preview .pv-jacket{width:54px; height:64px; border-radius:14px 14px 12px 12px;
+    box-shadow:var(--shadow); border:2px solid #e2e8ee;}
+  .cz-preview .disc{min-width:64px; width:64px; height:64px; font-size:1.8rem; border-width:5px;}
+  .cz-row{margin:12px 0; text-align:start;}
+  .cz-label{font-weight:800; font-size:.95rem; margin-bottom:7px; color:var(--ink,#2c3e57);}
+  .cz-opts{display:flex; flex-wrap:wrap; gap:9px;}
+  .cz-sw{width:38px; height:38px; border-radius:50%; border:3px solid #fff; cursor:pointer;
+    padding:0; box-shadow:0 0 0 2px rgba(0,0,0,.14); transition:transform .08s;}
+  .cz-sw:active{transform:scale(.92);}
+  .cz-sw.sel{box-shadow:0 0 0 3px var(--ink,#2c3e57);}
+  .cz-done{margin-top:10px;}
 </style>
 </head>
 <body>
@@ -371,8 +396,10 @@
       <div class="title-plates"><span>🅰️</span><span>🍽️</span><span>🅱️</span><span>🍽️</span><span>🆎</span></div>
       <div class="title-actions">
         <button class="btn big" id="play-btn" data-i18n="play">▶ Play</button>
+        <button class="btn ghost" id="customize-btn" data-i18n="customize">🎨 Customize</button>
         <div style="display:flex; gap:10px; align-items:center;">
           <button class="icon-btn" id="mute-btn-title" data-i18n-title="sound" title="Sound">🔊</button>
+          <button class="icon-btn" id="music-btn-title" data-i18n-title="music" title="Music">🎵</button>
           <button class="mini-link" id="lang-btn">עברית</button>
           <button class="mini-link" id="reset-btn" data-i18n="reset">Reset progress</button>
         </div>
@@ -402,6 +429,7 @@
       <div class="level-tag" id="play-level">Level<small>Letters</small></div>
       <div class="spacer"></div>
       <button class="icon-btn" id="mute-btn-play" data-i18n-title="sound" title="Sound">🔊</button>
+      <button class="icon-btn" id="music-btn-play" data-i18n-title="music" title="Music">🎵</button>
     </div>
 
     <div class="progress-row">
@@ -497,7 +525,7 @@
           <circle cx="22" cy="63" r="8.5" fill="#f3c69b" stroke="#e0a877" stroke-width="1.5"/>
           <circle cx="98" cy="63" r="8.5" fill="#f3c69b" stroke="#e0a877" stroke-width="1.5"/>
           <!-- jacket -->
-          <rect x="36" y="84" width="48" height="50" rx="15" fill="#ffffff" stroke="#e2e8ee" stroke-width="2"/>
+          <rect class="jacket" x="36" y="84" width="48" height="50" rx="15" fill="#ffffff" stroke="#e2e8ee" stroke-width="2"/>
           <path d="M50 86 L60 100 L70 86 Z" fill="#f4628a"/>
           <g fill="#d4dde5">
             <circle cx="53" cy="106" r="2.4"/><circle cx="53" cy="118" r="2.4"/>
@@ -554,6 +582,19 @@
 </div>
 <div id="fx"></div>
 
+<!-- ============ COSMETICS CUSTOMIZER ============ -->
+<div class="cz-wrap" id="cz" role="dialog" aria-modal="true">
+  <div class="cz-card">
+    <div class="cz-title" data-i18n="cz_title">Make it yours</div>
+    <div class="cz-preview" aria-hidden="true">
+      <span class="pv-jacket" id="cz-jacket"></span>
+      <span class="disc" id="cz-plate">A</span>
+    </div>
+    <div id="cz-rows"></div>
+    <button class="btn green cz-done" id="cz-done" data-i18n="cz_done">Done</button>
+  </div>
+</div>
+
 <!-- ============ INTRO CUTSCENE: the cart trips and plates fly ============ -->
 <div id="cutscene" class="cutscene" aria-hidden="true">
   <div class="cs-ceiling"></div>
@@ -570,7 +611,7 @@
         <path d="M78 96 Q92 88 97 66" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
         <circle cx="22" cy="63" r="8.5" fill="#f3c69b" stroke="#e0a877" stroke-width="1.5"/>
         <circle cx="98" cy="63" r="8.5" fill="#f3c69b" stroke="#e0a877" stroke-width="1.5"/>
-        <rect x="36" y="84" width="48" height="50" rx="15" fill="#ffffff" stroke="#e2e8ee" stroke-width="2"/>
+        <rect class="jacket" x="36" y="84" width="48" height="50" rx="15" fill="#ffffff" stroke="#e2e8ee" stroke-width="2"/>
         <path d="M50 86 L60 100 L70 86 Z" fill="#f4628a"/>
         <g fill="#d4dde5">
           <circle cx="53" cy="106" r="2.4"/><circle cx="53" cy="118" r="2.4"/>
@@ -686,18 +727,19 @@ const WORDS = {
     ],
   },
   he:{
+    // Stored pointed (with nikud). The typed/compare form is derived with stripNikud().
     easy:[
-      {w:"כלב",emoji:"🐶"},{w:"שמש",emoji:"☀️"},{w:"דג",emoji:"🐟"},{w:"פרה",emoji:"🐮"},
-      {w:"ארי",emoji:"🦁"},{w:"תות",emoji:"🍓"},{w:"עץ",emoji:"🌳"},{w:"יד",emoji:"✋"},
-      {w:"פרח",emoji:"🌸"},{w:"דבש",emoji:"🍯"},{w:"בית",emoji:"🏠"},{w:"דוב",emoji:"🐻"},
-      {w:"נמר",emoji:"🐯"},{w:"פיל",emoji:"🐘"},{w:"סוס",emoji:"🐴"},{w:"עוף",emoji:"🐔"},
-      {w:"חתול",emoji:"🐱"},{w:"גזר",emoji:"🥕"},{w:"כדור",emoji:"⚽"},{w:"ביצה",emoji:"🥚"},
+      {w:"כֶּלֶב",emoji:"🐶"},{w:"שֶׁמֶשׁ",emoji:"☀️"},{w:"דָּג",emoji:"🐟"},{w:"פָּרָה",emoji:"🐮"},
+      {w:"אֲרִי",emoji:"🦁"},{w:"תּוּת",emoji:"🍓"},{w:"עֵץ",emoji:"🌳"},{w:"יָד",emoji:"✋"},
+      {w:"פֶּרַח",emoji:"🌸"},{w:"דְּבַשׁ",emoji:"🍯"},{w:"בַּיִת",emoji:"🏠"},{w:"דּוֹב",emoji:"🐻"},
+      {w:"נָמֵר",emoji:"🐯"},{w:"פִּיל",emoji:"🐘"},{w:"סוּס",emoji:"🐴"},{w:"עוֹף",emoji:"🐔"},
+      {w:"חָתוּל",emoji:"🐱"},{w:"גֶּזֶר",emoji:"🥕"},{w:"כַּדּוּר",emoji:"⚽"},{w:"בֵּיצָה",emoji:"🥚"},
     ],
     hard:[
-      {w:"תפוח",emoji:"🍎"},{w:"בננה",emoji:"🍌"},{w:"רכבת",emoji:"🚆"},{w:"עכבר",emoji:"🐭"},
-      {w:"נחש",emoji:"🐍"},{w:"פרפר",emoji:"🦋"},{w:"ירח",emoji:"🌙"},{w:"כוכב",emoji:"⭐"},
-      {w:"גלידה",emoji:"🍦"},{w:"עוגה",emoji:"🍰"},{w:"מטוס",emoji:"✈️"},{w:"אריה",emoji:"🦁"},
-      {w:"ענן",emoji:"☁️"},{w:"שולחן",emoji:"🪑"},{w:"גיטרה",emoji:"🎸"},{w:"חלון",emoji:"🪟"},
+      {w:"תַּפּוּחַ",emoji:"🍎"},{w:"בָּנָנָה",emoji:"🍌"},{w:"רַכֶּבֶת",emoji:"🚆"},{w:"עַכְבָּר",emoji:"🐭"},
+      {w:"נָחָשׁ",emoji:"🐍"},{w:"פַּרְפַּר",emoji:"🦋"},{w:"יָרֵחַ",emoji:"🌙"},{w:"כּוֹכָב",emoji:"⭐"},
+      {w:"גְּלִידָה",emoji:"🍦"},{w:"עוּגָה",emoji:"🍰"},{w:"מָטוֹס",emoji:"✈️"},{w:"אַרְיֵה",emoji:"🦁"},
+      {w:"עָנָן",emoji:"☁️"},{w:"שׁוּלְחָן",emoji:"🪑"},{w:"גִּיטָרָה",emoji:"🎸"},{w:"חַלּוֹן",emoji:"🪟"},
     ],
   },
 };
@@ -710,7 +752,13 @@ const I18N = {
     tagline:"Type the letters to save the plates!",
     play:"▶ Play",
     sound:"Sound",
+    music:"Music",
     reset:"Reset progress",
+    customize:"🎨 Customize",
+    cz_title:"Make it yours",
+    cz_jacket:"Apron",
+    cz_plate:"Plates",
+    cz_done:"Done",
     pickLevel:"Pick a Level",
     pickSub:"your typing adventure",
     back:"Back",
@@ -749,7 +797,13 @@ const I18N = {
     tagline:"הקלידו את האותיות והצילו את הצלחות!",
     play:"▶ שחקו",
     sound:"צליל",
+    music:"מוזיקה",
     reset:"איפוס התקדמות",
+    customize:"🎨 התאמה אישית",
+    cz_title:"עיצוב אישי",
+    cz_jacket:"סינר",
+    cz_plate:"צלחות",
+    cz_done:"סיום",
     pickLevel:"בחרו שלב",
     pickSub:"הרפתקת ההקלדה שלך",
     back:"חזרה",
@@ -797,8 +851,11 @@ function mistakesText(m){ return m===0 ? t("perfect") : (m===1 ? t("oops_one") :
 //  Persistent save (progress tracked separately per language)
 // =========================================================
 const SAVE_KEY = "fallingPlates.save";
+// Player-chosen cosmetics (shared, not per-language).
+const DEFAULT_COSMETICS = {jacket:"#ffffff", rim:"#7cc6ff"};
 const DEFAULT_SAVE = {
-  lang:DEFAULT_LANG, muted:false,
+  lang:DEFAULT_LANG, muted:false, music:true,
+  cosmetics:{...DEFAULT_COSMETICS},
   progress:{ he:{unlockedLevel:0, starsByLevel:{}, endlessBest:0}, en:{unlockedLevel:0, starsByLevel:{}, endlessBest:0} },
 };
 function loadSave(){
@@ -806,6 +863,7 @@ function loadSave(){
     const raw = localStorage.getItem(SAVE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
     const s = {...DEFAULT_SAVE, ...parsed};
+    s.cosmetics = {...DEFAULT_COSMETICS, ...(parsed.cosmetics||{})};
     s.progress = {...DEFAULT_SAVE.progress, ...(parsed.progress||{})};
     for(const lng of ["he","en"]){
       s.progress[lng] = {unlockedLevel:0, starsByLevel:{}, endlessBest:0, ...(s.progress[lng]||{})};
@@ -828,45 +886,156 @@ const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 // =========================================================
 //  Sound (tiny Web Audio jingles — no files)
 // =========================================================
-let audioCtx = null;
-function beep(freq, start, dur, type="sine", gain=0.15){
-  if(save.muted) return;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const t0 = audioCtx.currentTime + start;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = type; osc.frequency.value = freq;
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(gain, t0+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(t0); osc.stop(t0+dur);
-  }catch(e){}
+// Pure Web Audio: no files, no libraries, no network.
+//   tone()  = one ADSR voice (optional detune/glide/filter/echo)
+//   noise() = filtered noise burst for percussive cues
+//   arp()   = quick chord/arpeggio for happy cues
+// A shared compressor + a feedback-delay "sparkle" send keep stacked
+// notes from clipping and add a touch of space.
+let audioCtx = null, sfxBus = null, musicBus = null, fxDelay = null;
+const midi = m => 440 * Math.pow(2, (m - 69) / 12);   // MIDI note → Hz
+function audio(){
+  if(audioCtx) return audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  try{ audioCtx = new AC(); }catch(e){ return null; }
+  const comp = audioCtx.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.knee.value = 26; comp.ratio.value = 3.5;
+  comp.attack.value = 0.004; comp.release.value = 0.25; comp.connect(audioCtx.destination);
+  fxDelay = audioCtx.createDelay(0.5); fxDelay.delayTime.value = 0.17;
+  const fb = audioCtx.createGain(); fb.gain.value = 0.24;
+  const wet = audioCtx.createGain(); wet.gain.value = 0.45;
+  fxDelay.connect(fb); fb.connect(fxDelay); fxDelay.connect(wet); wet.connect(comp);
+  sfxBus = audioCtx.createGain(); sfxBus.gain.value = 0.85; sfxBus.connect(comp);
+  musicBus = audioCtx.createGain(); musicBus.gain.value = 0.0001; musicBus.connect(comp);
+  return audioCtx;
 }
-// short filtered-noise burst — the "crash" of breaking ceramic
-function noiseBurst(dur=0.2, gain=0.16, hp=1100){
+function audioReady(){ const c = audio(); if(c && c.state === "suspended") c.resume(); return c; }
+function tone(o){
+  const ctx = audioReady(); if(!ctx) return;
+  const t0 = (o.at != null) ? o.at : ctx.currentTime + (o.t || 0);
+  const dur = o.dur != null ? o.dur : 0.2;
+  const peak = o.gain != null ? o.gain : 0.15;
+  const atk = o.attack != null ? o.attack : 0.012;
+  const rel = o.release != null ? o.release : Math.min(dur, 0.18);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + atk);
+  g.gain.setValueAtTime(peak, t0 + Math.max(atk, dur - rel));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let sink = g;
+  if(o.cutoff){
+    const lp = ctx.createBiquadFilter(); lp.type = o.filter || "lowpass";
+    lp.frequency.value = o.cutoff; lp.Q.value = o.q != null ? o.q : 0.7;
+    lp.connect(g); sink = lp;
+  }
+  for(const d of (o.fat ? [-6, 6] : [0])){
+    const osc = ctx.createOscillator();
+    osc.type = o.type || "sine";
+    osc.frequency.setValueAtTime(o.freq, t0);
+    if(o.glideTo) osc.frequency.exponentialRampToValueAtTime(o.glideTo, t0 + dur);
+    osc.detune.value = (o.detune || 0) + d;
+    osc.connect(sink); osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+  g.connect(o.bus || sfxBus);
+  if(o.echo && fxDelay) g.connect(fxDelay);
+}
+function noise(o){
+  const ctx = audioReady(); if(!ctx) return;
+  const t0 = (o.at != null) ? o.at : ctx.currentTime + (o.t || 0);
+  const dur = o.dur != null ? o.dur : 0.2;
+  const n = Math.max(1, Math.floor(ctx.sampleRate * dur));
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  const curve = o.curve != null ? o.curve : 2;
+  for(let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, curve);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = o.filter || "lowpass";
+  filt.frequency.value = o.cutoff != null ? o.cutoff : 1200;
+  filt.Q.value = o.q != null ? o.q : 0.8;
+  const g = ctx.createGain(); g.gain.value = o.gain != null ? o.gain : 0.15;
+  src.connect(filt); filt.connect(g); g.connect(o.bus || sfxBus);
+  if(o.echo && fxDelay) g.connect(fxDelay);
+  src.start(t0); src.stop(t0 + dur + 0.02);
+}
+function arp(root, intervals, opts){
+  const o = opts || {};
+  intervals.forEach((iv, i) => tone({
+    freq: midi(root + iv), t: (o.t || 0) + i * (o.step != null ? o.step : 0.09),
+    dur: o.dur != null ? o.dur : 0.3, type: o.type || "triangle",
+    gain: o.gain != null ? o.gain : 0.13, attack: 0.006, release: 0.22,
+    echo: true, fat: o.fat, cutoff: o.cutoff || 2600
+  }));
+}
+// Back-compat: existing call sites use beep(freq,start,dur,type,gain).
+function beep(freq, start, dur, type = "sine", gain = 0.15){
   if(save.muted) return;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const t0 = audioCtx.currentTime;
-    const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate*dur), audioCtx.sampleRate);
-    const data = buf.getChannelData(0);
-    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 2); }
-    const src = audioCtx.createBufferSource(); src.buffer = buf;
-    const filt = audioCtx.createBiquadFilter(); filt.type="highpass"; filt.frequency.value = hp;
-    const g = audioCtx.createGain(); g.gain.value = gain;
-    src.connect(filt); filt.connect(g); g.connect(audioCtx.destination);
-    src.start(t0);
-  }catch(e){}
+  tone({ freq, t: start, dur, type, gain, cutoff: (type === "square" || type === "sawtooth") ? 2800 : 0 });
 }
 function playSound(type){
-  if(type==="save"){ beep(660,0,.13,"triangle"); beep(990,.1,.2,"triangle"); }
-  else if(type==="type"){ beep(740,0,.05,"square",.07); }
-  else if(type==="wrong"){ beep(180,0,.14,"sawtooth",.08); }
-  else if(type==="smash"){ noiseBurst(.22,.17,1100); beep(2100,0,.05,"square",.05); beep(1500,.05,.07,"triangle",.05); beep(700,.02,.13,"sine",.09); }
-  else if(type==="level"){ [523,659,784,1046].forEach((f,i)=>beep(f,i*.12,.25,"triangle")); }
-  else if(type==="tap"){ beep(440,0,.05,"square",.06); }
+  if(save.muted) return;
+  if(type==="save"){ tone({freq:660,dur:0.12,type:"triangle",gain:0.11,echo:true,cutoff:3000}); tone({freq:990,t:0.1,dur:0.22,type:"triangle",gain:0.1,echo:true,cutoff:3200}); }
+  else if(type==="type"){ tone({freq:740,dur:0.05,type:"triangle",gain:0.08,attack:0.003,release:0.04,cutoff:3200}); }
+  else if(type==="wrong"){ tone({freq:280,glideTo:160,dur:0.22,type:"sine",gain:0.11,release:0.2,cutoff:1300}); }
+  else if(type==="smash"){ noise({dur:0.22,gain:0.16,filter:"highpass",cutoff:1100,curve:2}); tone({freq:2100,dur:0.05,type:"triangle",gain:0.05,cutoff:4000}); tone({freq:1500,t:0.05,dur:0.07,type:"triangle",gain:0.05,cutoff:3500}); tone({freq:700,t:0.02,dur:0.13,type:"sine",gain:0.08}); }
+  else if(type==="level"){ arp(60,[0,4,7,12,16,19],{step:0.1,gain:0.12,dur:0.4,fat:true}); }
+  else if(type==="tap"){ tone({freq:560,dur:0.06,type:"triangle",gain:0.07,attack:0.003,release:0.05,cutoff:3000}); }
+}
+
+// Ambient music — generative loop via a lookahead scheduler.
+// Bass + pad per bar, sprinkled pentatonic melody, soft shaker. Own bus, low volume under the SFX.
+const MUSIC = { tempo:92, root:60, wave:"triangle", vol:0.42,
+  scale:[0,2,4,7,9], prog:[0,5,7,9], chord:[0,4,7], melodyAt:[2,3,5,6,7], shaker:true };
+let musicTimer = null, musicBeat = 0, musicNextT = 0, musicPlaying = false;
+function musicStep(at, eighth){
+  const m = MUSIC, SPB = 8, step = musicBeat % SPB;
+  const cr = m.root + m.prog[Math.floor(musicBeat / SPB) % m.prog.length];
+  if(step === 0){
+    tone({ at, freq: midi(cr - 12), dur: eighth * SPB * 0.92, type: "sine", gain: 0.085, attack: 0.05, release: 0.7, bus: musicBus });
+    m.chord.forEach((iv, k) => tone({ at: at + k * 0.012, freq: midi(cr + iv), dur: eighth * SPB * 0.96, type: m.wave, gain: 0.04, attack: 0.3, release: 0.9, fat: true, cutoff: 1900, bus: musicBus }));
+  } else if(step === 4){
+    tone({ at, freq: midi(cr - 12), dur: eighth * 3, type: "sine", gain: 0.055, attack: 0.04, release: 0.4, bus: musicBus });
+  }
+  if(m.melodyAt.includes(step) && Math.random() < 0.7){
+    const deg = m.scale[Math.floor(Math.random() * m.scale.length)] + (Math.random() < 0.25 ? 12 : 0);
+    tone({ at, freq: midi(cr + 12 + deg), dur: 0.34, type: "triangle", gain: 0.05, attack: 0.006, release: 0.3, echo: true, cutoff: 3200, bus: musicBus });
+  }
+  if(m.shaker && step % 2 === 1) noise({ at, dur: 0.05, gain: 0.012, filter: "highpass", cutoff: 6000, curve: 1, bus: musicBus });
+}
+function musicTick(){
+  const ctx = audioCtx; if(!ctx || !musicPlaying) return;
+  const eighth = 60 / MUSIC.tempo / 2;
+  while(musicNextT < ctx.currentTime + 0.12){ musicStep(musicNextT, eighth); musicNextT += eighth; musicBeat++; }
+}
+function startMusic(){
+  if(musicPlaying || save.muted || !save.music) return;
+  const ctx = audioReady(); if(!ctx) return;
+  musicPlaying = true; musicBeat = 0; musicNextT = ctx.currentTime + 0.18;
+  musicBus.gain.cancelScheduledValues(ctx.currentTime);
+  musicBus.gain.setValueAtTime(0.0001, ctx.currentTime);
+  musicBus.gain.exponentialRampToValueAtTime(MUSIC.vol, ctx.currentTime + 1.6);
+  musicTimer = setInterval(musicTick, 25);
+}
+function stopMusic(){
+  if(!musicPlaying) return;
+  musicPlaying = false;
+  if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
+  const ctx = audioCtx; if(!ctx || !musicBus) return;
+  const now = ctx.currentTime;
+  musicBus.gain.cancelScheduledValues(now);
+  musicBus.gain.setValueAtTime(Math.max(0.0001, musicBus.gain.value), now);
+  musicBus.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+}
+function maybeStartMusic(){ if(save.music && !save.muted) startMusic(); }
+// Unlock the AudioContext + start music on the very first interaction.
+["pointerdown","keydown"].forEach(ev => window.addEventListener(ev, function k(){ audioReady(); maybeStartMusic(); }, { once:true }));
+function refreshMusicBtn(){
+  ["#music-btn-title","#music-btn-play"].forEach(sel => { const b = $(sel); if(b){ b.textContent = "🎵"; b.classList.toggle("is-off", !save.music); } });
+}
+function toggleMusic(){
+  save.music = !save.music; persist(); refreshMusicBtn();
+  if(save.music){ maybeStartMusic(); if(!save.muted) playSound("tap"); } else stopMusic();
 }
 
 // =========================================================
@@ -901,7 +1070,17 @@ function renderSelect(){
       <div class="lc-name">${t(lv.nameKey)}</div>
       <div class="lc-sub">${modeLabel} • ${lv.target} ${t("plates")}</div>
       <div class="lc-stars">${starString(stars)}</div>`;
-    if(!locked) card.addEventListener("click",()=>startLevel(i));
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `${t(lv.nameKey)} — ${modeLabel}, ${lv.target} ${t("plates")}`);
+    if(locked){
+      card.setAttribute("aria-disabled", "true");
+    }else{
+      card.tabIndex = 0;
+      card.addEventListener("click",()=>startLevel(i));
+      card.addEventListener("keydown",e=>{
+        if(e.key==="Enter" || e.key===" "){ e.preventDefault(); startLevel(i); }
+      });
+    }
     grid.appendChild(card);
   });
 }
@@ -1098,18 +1277,32 @@ function moveBaker(dt){
   bakerEl.style.left = baker.x + "%";
 }
 
+// Group a (possibly pointed) Hebrew string into clusters of one base letter plus its
+// trailing nikud/dagesh marks, so each rendered span maps to a single typed character.
+function nikudClusters(s){
+  const out = [];
+  for(const ch of s){
+    const u = ch.codePointAt(0);                                  // Hebrew points/accents: U+0591..U+05C7
+    if(u >= 0x0591 && u <= 0x05C7 && out.length) out[out.length-1] += ch;
+    else out.push(ch);
+  }
+  return out;
+}
+// Remove all Hebrew points/accents (U+0591..U+05C7) to get the consonants you actually type.
+function stripNikud(s){ return s.replace(/[֑-ׇ]/g, ""); }
+
 function spawnPlate(lv){
   const id = game.nextId++;
-  let text, emoji=null;
+  let text, emoji=null, display=null;
   const live = game.plates.map(p=>p.text);
   if(lv.mode==="letter"){
     const pool = ALPHABETS[save.lang].filter(c=>!live.includes(c));
     text = pick(pool.length?pool:ALPHABETS[save.lang]);
   }else{
     const words = WORDS[save.lang][lv.pool];
-    const pool = words.filter(o=>!live.includes(o.w));
+    const pool = words.filter(o=>!live.includes(stripNikud(o.w)));
     const obj = pick(pool.length?pool:words);
-    text = obj.w; emoji = obj.emoji;
+    display = obj.w; text = stripNikud(obj.w); emoji = obj.emoji;   // show pointed; type the stripped form
   }
 
   const el = document.createElement("div");
@@ -1117,7 +1310,9 @@ function spawnPlate(lv){
   let inner = "";
   if(lv.showImage && emoji) inner += `<div class="pic">${emoji}</div>`;
   if(lv.mode==="word"){
-    const chars = [...text].map(c=>`<span class="ch">${c}</span>`).join("");
+    // One span per BASE letter (with its nikud attached) so the typed-progress highlight
+    // stays aligned with p.text, which is unpointed — you can't type vowel marks.
+    const chars = nikudClusters(display).map(c=>`<span class="ch">${c}</span>`).join("");
     inner += `<div class="disc">${chars}</div>`;
   }else{
     inner += `<div class="disc">${text}</div>`;
@@ -1181,20 +1376,9 @@ function onKey(e){
   }
 
   // word mode: keep typing the focused plate (or grab the lowest one)
-  let p = game.plates.find(pl=>pl.id===game.focusId) || lowestPlate();
+  const p = game.plates.find(pl=>pl.id===game.focusId) || lowestPlate();
   if(!p) return;
-  const expected = p.text[p.typedIndex];
-  if(key===expected){
-    p.typedIndex++;
-    game.focusId = p.id;
-    refreshFocus();
-    if(p.typedIndex >= p.text.length){ savePlate(p); }
-    else { playSound("type"); }
-  }else{
-    playSound("wrong");
-    p.el.classList.add("wobble");
-    setTimeout(()=>p.el.classList.remove("wobble"), 400);
-  }
+  typeChar(p, key);
 }
 
 // Unified typing: continue a word in progress, else start the lowest plate whose
@@ -1209,8 +1393,13 @@ function handleTypeUnified(key){
     p = best;
   }
   if(!p){ playSound("wrong"); return; }
-  const expected = p.text[p.typedIndex];
-  if(key===expected){
+  typeChar(p, key);
+}
+
+// Advance one plate by a typed character: accept the next char (saving the plate
+// when complete) or reject it with a wobble. Shared by both typing handlers.
+function typeChar(p, key){
+  if(key === p.text[p.typedIndex]){
     p.typedIndex++;
     game.focusId = p.id;
     refreshFocus();
@@ -1486,7 +1675,7 @@ function refreshMute(){
   $("#mute-btn-title").textContent = icon;
   $("#mute-btn-play").textContent = icon;
 }
-function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(!save.muted) playSound("tap"); }
+function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(save.muted){ stopMusic(); } else { playSound("tap"); maybeStartMusic(); } }
 
 function applyLanguage(){
   if(!I18N[save.lang]) save.lang = DEFAULT_LANG;
@@ -1505,25 +1694,73 @@ document.addEventListener("click", e=>{
   if(go) showScreen(go.getAttribute("data-go"));
 });
 document.addEventListener("keydown", onKey);
-window.addEventListener("blur", ()=>{ game.lastTs = performance.now(); });   // avoid a jump after refocus
+// Re-anchor the clock when focus/visibility returns, so the loop's dt doesn't jump
+// after the tab was backgrounded (RAF is paused while hidden).
+const reanchorClock = ()=>{ game.lastTs = performance.now(); };
+window.addEventListener("blur", reanchorClock);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) reanchorClock(); });
+
+// =========================================================
+//  Cosmetics customizer (baker apron + plate colour, via CSS vars)
+// =========================================================
+const COSMETIC_OPTS = [
+  {key:"jacket", labelKey:"cz_jacket",
+    colors:["#ffffff","#ffd6e2","#ffe3b0","#c8efd2","#bfe3ff","#e0d4ff","#ffc9a8","#d7dde3"]},
+  {key:"rim", labelKey:"cz_plate",
+    colors:["#7cc6ff","#ff8fab","#5fbf6a","#ffd166","#b08cff","#ff9d5c","#4fd0c4","#f4628a"]},
+];
+function applyCosmetics(){
+  const r = document.documentElement.style;
+  r.setProperty("--jacket", save.cosmetics.jacket);
+  r.setProperty("--rim", save.cosmetics.rim);
+}
+function renderCustomizer(){
+  const j = $("#cz-jacket"); if(j) j.style.background = save.cosmetics.jacket;
+  const rows = $("#cz-rows"); rows.innerHTML = "";
+  COSMETIC_OPTS.forEach(cat=>{
+    const cur = save.cosmetics[cat.key];
+    const row = document.createElement("div"); row.className = "cz-row";
+    const lbl = document.createElement("div"); lbl.className = "cz-label"; lbl.textContent = t(cat.labelKey);
+    const opts = document.createElement("div"); opts.className = "cz-opts";
+    cat.colors.forEach(val=>{
+      const b = document.createElement("button"); b.type = "button";
+      b.className = "cz-sw" + (cur===val ? " sel" : "");
+      b.style.background = val;
+      b.setAttribute("aria-label", val);
+      b.addEventListener("click", ()=>setCosmetic(cat.key, val));
+      opts.appendChild(b);
+    });
+    row.appendChild(lbl); row.appendChild(opts); rows.appendChild(row);
+  });
+}
+function setCosmetic(key,val){ save.cosmetics[key]=val; persist(); applyCosmetics(); renderCustomizer(); playSound("tap"); }
+function openCustomizer(){ renderCustomizer(); $("#cz").classList.add("open"); }
+function closeCustomizer(){ $("#cz").classList.remove("open"); }
 
 $("#play-btn").addEventListener("click", ()=>{ playSound("tap"); playIntro(()=>showScreen("select")); });
 $("#endless-challenge").addEventListener("click", ()=>{ playSound("tap"); startChallenge(); });
+$("#customize-btn").addEventListener("click", ()=>{ playSound("tap"); openCustomizer(); });
+$("#cz-done").addEventListener("click", ()=>{ playSound("tap"); closeCustomizer(); });
+$("#cz").addEventListener("click", e=>{ if(e.target.id==="cz") closeCustomizer(); });
 $("#mute-btn-title").addEventListener("click", toggleMute);
 $("#mute-btn-play").addEventListener("click", toggleMute);
+$("#music-btn-title").addEventListener("click", toggleMusic);
+$("#music-btn-play").addEventListener("click", toggleMusic);
 $("#lang-btn").addEventListener("click", toggleLanguage);
 $("#reset-btn").addEventListener("click", ()=>{
   if(confirm(t("resetConfirm"))){
-    const lang = save.lang;
+    const lang = save.lang, cosmetics = {...save.cosmetics};  // keep language + cosmetics
     save = JSON.parse(JSON.stringify(DEFAULT_SAVE));
-    save.lang = lang;
-    persist(); refreshMute(); applyLanguage();
+    save.lang = lang; save.cosmetics = cosmetics;
+    persist(); refreshMute(); applyCosmetics(); applyLanguage();
     alert(t("resetDone"));
   }
 });
 
 // init
+applyCosmetics();
 refreshMute();
+refreshMusicBtn();
 applyLanguage();
 </script>
 </body>

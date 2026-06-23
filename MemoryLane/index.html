@@ -85,6 +85,7 @@
     font-size:1.4rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.1);
   }
   .icon-btn:active{transform:translateY(2px);}
+  .icon-btn.is-off{opacity:.4; filter:grayscale(1);}
   .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
 
   /* ---------- Title screen ---------- */
@@ -170,9 +171,10 @@
     box-shadow:0 4px 8px rgba(0,0,0,.16);
     overflow:hidden;
   }
-  /* BACK = patterned SVG with a "?" (shown when face-down) */
+  /* BACK = patterned SVG (shown when face-down). The player's chosen back colour
+     drives --card-back; the full-bleed SVG paints over it, this is just a fallback. */
   .card .back{
-    background:linear-gradient(145deg, var(--accent), var(--accent-soft));
+    background:var(--card-back, var(--accent));
   }
   .card .back svg{width:100%; height:100%; display:block;}
   /* FRONT = the picture (shown after flip, rotated to read correctly) */
@@ -181,7 +183,9 @@
     background:radial-gradient(circle at 35% 28%, #ffffff, #f1f0ff 72%, #e4e1ff);
     font-size:clamp(1.6rem,9vw,3rem); line-height:1;
   }
-  .card:hover .inner{filter:brightness(1.03);}
+  /* filter on .face, not .inner: a filter on .inner flattens its preserve-3d and
+     collapses the flip (a flipped card would snap face-down while hovered) */
+  .card:hover .face{filter:brightness(1.04);}
   .card.shake .inner{animation:wobble .45s ease;}
   /* matched cards gently float + glow */
   .card.matched{cursor:default;}
@@ -235,6 +239,27 @@
   @media (max-width:480px){
     .title-cards .tc{width:48px; height:62px; font-size:1.7rem;}
   }
+
+
+  /* ---------- Cosmetics customizer (overlay) ---------- */
+  .cz-wrap{position:fixed; inset:0; z-index:80; display:none; align-items:center;
+    justify-content:center; background:rgba(30,25,55,.5); padding:16px;}
+  .cz-wrap.open{display:flex;}
+  .cz-card{background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px; max-width:380px; width:100%; max-height:90vh; overflow:auto; text-align:center;}
+  .cz-title{font-weight:900; font-size:1.4rem; margin:2px 0 8px; color:var(--purple-deep);}
+  .cz-preview{display:flex; justify-content:center; margin:4px 0 12px;}
+  .cz-preview .pv{width:84px; height:112px; border-radius:14px; overflow:hidden; box-shadow:var(--shadow);}
+  .cz-preview .pv svg{width:100%; height:100%; display:block;}
+  .cz-row{margin:12px 0; text-align:start;}
+  .cz-label{font-weight:800; font-size:.95rem; margin-bottom:7px; color:var(--ink);}
+  .cz-opts{display:flex; flex-wrap:wrap; gap:9px;}
+  .cz-sw{width:38px; height:38px; border-radius:50%; border:3px solid #fff; cursor:pointer;
+    padding:0; box-shadow:0 0 0 2px rgba(0,0,0,.14); transition:transform .08s;
+    font-weight:900; color:#fff; font-size:1.1rem; line-height:1;}
+  .cz-sw:active{transform:scale(.92);}
+  .cz-sw.sel{box-shadow:0 0 0 3px var(--ink);}
+  .cz-done{margin-top:10px;}
 </style>
 </head>
 <body>
@@ -251,8 +276,10 @@
       </div>
       <div class="title-actions">
         <button class="btn big" id="play-btn" data-i18n="play">▶ Play</button>
+        <button class="btn ghost" id="customize-btn" data-i18n="customize">🎨 Customize</button>
         <div style="display:flex; gap:10px; align-items:center;">
           <button class="icon-btn" id="mute-btn-title" data-i18n-title="sound" title="Sound">🔊</button>
+          <button class="icon-btn" id="music-btn-title" data-i18n-title="music" title="Music">🎵</button>
           <button class="mini-link" id="lang-btn">English</button>
           <button class="mini-link" id="reset-btn" data-i18n="reset">Reset progress</button>
         </div>
@@ -277,6 +304,7 @@
       <div class="level-tag" id="play-level">Level<small>World</small></div>
       <div class="spacer"></div>
       <button class="icon-btn" id="mute-btn-play" data-i18n-title="sound" title="Sound">🔊</button>
+      <button class="icon-btn" id="music-btn-play" data-i18n-title="music" title="Music">🎵</button>
       <div class="moves-pill" id="moves-pill">🔁 0</div>
     </div>
 
@@ -307,6 +335,16 @@
 
 </div>
 <div id="fx"></div>
+
+<!-- ============ COSMETICS CUSTOMIZER ============ -->
+<div class="cz-wrap" id="cz" role="dialog" aria-modal="true">
+  <div class="cz-card">
+    <div class="cz-title" data-i18n="cz_title">Pick your card back</div>
+    <div class="cz-preview"><div class="pv" id="cz-preview" aria-hidden="true"></div></div>
+    <div id="cz-rows"></div>
+    <button class="btn green cz-done" id="cz-done" data-i18n="cz_done">Done</button>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -350,7 +388,13 @@ const I18N = {
     tagline:"Flip the cards and find the matching pairs!",
     play:"▶ Play",
     sound:"Sound",
+    music:"Music",
     reset:"Reset progress",
+    customize:"🎨 Customize",
+    cz_title:"Pick your card back",
+    cz_color:"Back colour",
+    cz_motif:"Symbol",
+    cz_done:"Done",
     pickLevel:"Pick a Level",
     pickSub:"your memory adventure",
     back:"Back",
@@ -382,7 +426,13 @@ const I18N = {
     tagline:"הופכים קלפים ומוצאים את הזוגות התואמים!",
     play:"▶ שחקו",
     sound:"צליל",
+    music:"מוזיקה",
     reset:"איפוס התקדמות",
+    customize:"🎨 התאמה אישית",
+    cz_title:"בחרו גב לקלפים",
+    cz_color:"צבע הגב",
+    cz_motif:"סמל",
+    cz_done:"סיום",
     pickLevel:"בחרו שלב",
     pickSub:"הרפתקת הזיכרון שלך",
     back:"חזרה",
@@ -421,16 +471,21 @@ function mistakesText(m){ return m===0 ? t("perfect") : (m===1 ? t("oops_one") :
 
 // ----- Persistent save (progress is language-independent — flat shape) -----
 const SAVE_KEY = "memoryLane.save";
-const DEFAULT_SAVE = {unlockedLevel:0, starsByLevel:{}, muted:false, lang:DEFAULT_LANG};
+// Player-chosen card-back style (shared across levels/languages).
+const DEFAULT_COSMETICS = {back:"#8a7bff", motif:"?"};
+const DEFAULT_SAVE = {unlockedLevel:0, starsByLevel:{}, muted:false, music:true, lang:DEFAULT_LANG,
+  cosmetics:{...DEFAULT_COSMETICS}};
 
 function loadSave(){
   try{
     const raw = localStorage.getItem(SAVE_KEY);
-    if(!raw) return {...DEFAULT_SAVE};
-    const s = {...DEFAULT_SAVE, ...JSON.parse(raw)};
+    if(!raw) return {...DEFAULT_SAVE, cosmetics:{...DEFAULT_COSMETICS}};
+    const parsed = JSON.parse(raw);
+    const s = {...DEFAULT_SAVE, ...parsed};
+    s.cosmetics = {...DEFAULT_COSMETICS, ...(parsed.cosmetics||{})};
     if(!I18N[s.lang]) s.lang = DEFAULT_LANG;
     return s;
-  }catch(e){ return {...DEFAULT_SAVE}; }
+  }catch(e){ return {...DEFAULT_SAVE, cosmetics:{...DEFAULT_COSMETICS}}; }
 }
 function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
 let save = loadSave();
@@ -439,6 +494,14 @@ let save = loadSave();
 const $ = sel => document.querySelector(sel);
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+// Set an element's text and append it to a parent (small DOM-building helper).
+function appendEl(parent, tag, className, text){
+  const el = document.createElement(tag);
+  if(className) el.className = className;
+  if(text!=null) el.textContent = text;
+  parent.appendChild(el);
+  return el;
+}
 // Split a theme's emoji string into an array of individual pictures (emoji-safe).
 // Intl.Segmenter keeps multi-codepoint emoji (e.g. ✈️, 🏎️) whole; Array.from is the fallback.
 function emojiList(str){
@@ -452,34 +515,164 @@ function emojiList(str){
 // =========================================================
 //  Sound (tiny Web Audio jingles — no files)
 // =========================================================
-let audioCtx = null;
-function beep(freq, start, dur, type="sine", gain=0.15){
+// Pure Web Audio: no files, no libraries, no network.
+//   tone()  = one ADSR voice (optional detune/glide/filter/echo)
+//   noise() = filtered noise burst for percussive cues
+//   arp()   = quick chord/arpeggio for happy cues
+// A shared compressor + a feedback-delay "sparkle" send keep stacked
+// notes from clipping and add a touch of space.
+let audioCtx = null, sfxBus = null, musicBus = null, fxDelay = null;
+const midi = m => 440 * Math.pow(2, (m - 69) / 12);   // MIDI note → Hz
+function audio(){
+  if(audioCtx) return audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  try{ audioCtx = new AC(); }catch(e){ return null; }
+  const comp = audioCtx.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.knee.value = 26; comp.ratio.value = 3.5;
+  comp.attack.value = 0.004; comp.release.value = 0.25; comp.connect(audioCtx.destination);
+  fxDelay = audioCtx.createDelay(0.5); fxDelay.delayTime.value = 0.17;
+  const fb = audioCtx.createGain(); fb.gain.value = 0.24;
+  const wet = audioCtx.createGain(); wet.gain.value = 0.45;
+  fxDelay.connect(fb); fb.connect(fxDelay); fxDelay.connect(wet); wet.connect(comp);
+  sfxBus = audioCtx.createGain(); sfxBus.gain.value = 0.85; sfxBus.connect(comp);
+  musicBus = audioCtx.createGain(); musicBus.gain.value = 0.0001; musicBus.connect(comp);
+  return audioCtx;
+}
+function audioReady(){ const c = audio(); if(c && c.state === "suspended") c.resume(); return c; }
+function tone(o){
+  const ctx = audioReady(); if(!ctx) return;
+  const t0 = (o.at != null) ? o.at : ctx.currentTime + (o.t || 0);
+  const dur = o.dur != null ? o.dur : 0.2;
+  const peak = o.gain != null ? o.gain : 0.15;
+  const atk = o.attack != null ? o.attack : 0.012;
+  const rel = o.release != null ? o.release : Math.min(dur, 0.18);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + atk);
+  g.gain.setValueAtTime(peak, t0 + Math.max(atk, dur - rel));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let sink = g;
+  if(o.cutoff){
+    const lp = ctx.createBiquadFilter(); lp.type = o.filter || "lowpass";
+    lp.frequency.value = o.cutoff; lp.Q.value = o.q != null ? o.q : 0.7;
+    lp.connect(g); sink = lp;
+  }
+  for(const d of (o.fat ? [-6, 6] : [0])){
+    const osc = ctx.createOscillator();
+    osc.type = o.type || "sine";
+    osc.frequency.setValueAtTime(o.freq, t0);
+    if(o.glideTo) osc.frequency.exponentialRampToValueAtTime(o.glideTo, t0 + dur);
+    osc.detune.value = (o.detune || 0) + d;
+    osc.connect(sink); osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+  g.connect(o.bus || sfxBus);
+  if(o.echo && fxDelay) g.connect(fxDelay);
+}
+function noise(o){
+  const ctx = audioReady(); if(!ctx) return;
+  const t0 = (o.at != null) ? o.at : ctx.currentTime + (o.t || 0);
+  const dur = o.dur != null ? o.dur : 0.2;
+  const n = Math.max(1, Math.floor(ctx.sampleRate * dur));
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  const curve = o.curve != null ? o.curve : 2;
+  for(let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, curve);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = o.filter || "lowpass";
+  filt.frequency.value = o.cutoff != null ? o.cutoff : 1200;
+  filt.Q.value = o.q != null ? o.q : 0.8;
+  const g = ctx.createGain(); g.gain.value = o.gain != null ? o.gain : 0.15;
+  src.connect(filt); filt.connect(g); g.connect(o.bus || sfxBus);
+  if(o.echo && fxDelay) g.connect(fxDelay);
+  src.start(t0); src.stop(t0 + dur + 0.02);
+}
+function arp(root, intervals, opts){
+  const o = opts || {};
+  intervals.forEach((iv, i) => tone({
+    freq: midi(root + iv), t: (o.t || 0) + i * (o.step != null ? o.step : 0.09),
+    dur: o.dur != null ? o.dur : 0.3, type: o.type || "triangle",
+    gain: o.gain != null ? o.gain : 0.13, attack: 0.006, release: 0.22,
+    echo: true, fat: o.fat, cutoff: o.cutoff || 2600
+  }));
+}
+// Back-compat: existing call sites use beep(freq,start,dur,type,gain).
+function beep(freq, start, dur, type = "sine", gain = 0.15){
   if(save.muted) return;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const t0 = audioCtx.currentTime + start;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = type; osc.frequency.value = freq;
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(gain, t0+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(t0); osc.stop(t0+dur);
-  }catch(e){}
+  tone({ freq, t: start, dur, type, gain, cutoff: (type === "square" || type === "sawtooth") ? 2800 : 0 });
 }
 function playSound(type){
-  if(type==="flip"){ beep(520,0,.07,"square",.07); }
-  else if(type==="match"){ beep(660,0,.13,"triangle"); beep(990,.1,.2,"triangle"); }
-  else if(type==="mismatch"){ beep(200,0,.16,"sawtooth",.08); }
-  else if(type==="level"){ [523,659,784,1046].forEach((f,i)=>beep(f,i*.12,.25,"triangle")); }
-  else if(type==="tap"){ beep(440,0,.05,"square",.06); }
+  if(save.muted) return;
+  if(type==="flip"){ tone({freq:480,glideTo:620,dur:0.09,type:"triangle",gain:0.08,attack:0.003,release:0.06,cutoff:3200}); }
+  else if(type==="match"){ tone({freq:660,dur:0.12,type:"triangle",gain:0.11,echo:true,cutoff:3000}); tone({freq:990,t:0.1,dur:0.22,type:"triangle",gain:0.1,echo:true,cutoff:3200}); }
+  else if(type==="mismatch"){ tone({freq:330,glideTo:200,dur:0.24,type:"sine",gain:0.11,release:0.2,cutoff:1300}); }
+  else if(type==="level"){ arp(65,[0,4,7,12,16,19],{step:0.1,gain:0.12,dur:0.4,fat:true}); }
+  else if(type==="tap"){ tone({freq:560,dur:0.06,type:"triangle",gain:0.07,attack:0.003,release:0.05,cutoff:3000}); }
+}
+
+// Ambient music — generative loop via a lookahead scheduler.
+// Bass + pad per bar, sparse pentatonic melody. Own bus, low volume under the SFX.
+const MUSIC = { tempo:72, root:65, wave:"triangle", vol:0.38,
+  scale:[0,2,4,7,9], prog:[0,-3,5,7], chord:[0,4,7], melodyAt:[2,5,7], shaker:false };
+let musicTimer = null, musicBeat = 0, musicNextT = 0, musicPlaying = false;
+function musicStep(at, eighth){
+  const m = MUSIC, SPB = 8, step = musicBeat % SPB;
+  const cr = m.root + m.prog[Math.floor(musicBeat / SPB) % m.prog.length];
+  if(step === 0){
+    tone({ at, freq: midi(cr - 12), dur: eighth * SPB * 0.92, type: "sine", gain: 0.085, attack: 0.05, release: 0.7, bus: musicBus });
+    m.chord.forEach((iv, k) => tone({ at: at + k * 0.012, freq: midi(cr + iv), dur: eighth * SPB * 0.96, type: m.wave, gain: 0.04, attack: 0.3, release: 0.9, fat: true, cutoff: 1900, bus: musicBus }));
+  } else if(step === 4){
+    tone({ at, freq: midi(cr - 12), dur: eighth * 3, type: "sine", gain: 0.055, attack: 0.04, release: 0.4, bus: musicBus });
+  }
+  if(m.melodyAt.includes(step) && Math.random() < 0.7){
+    const deg = m.scale[Math.floor(Math.random() * m.scale.length)] + (Math.random() < 0.25 ? 12 : 0);
+    tone({ at, freq: midi(cr + 12 + deg), dur: 0.34, type: "triangle", gain: 0.05, attack: 0.006, release: 0.3, echo: true, cutoff: 3200, bus: musicBus });
+  }
+  if(m.shaker && step % 2 === 1) noise({ at, dur: 0.05, gain: 0.012, filter: "highpass", cutoff: 6000, curve: 1, bus: musicBus });
+}
+function musicTick(){
+  const ctx = audioCtx; if(!ctx || !musicPlaying) return;
+  const eighth = 60 / MUSIC.tempo / 2;
+  while(musicNextT < ctx.currentTime + 0.12){ musicStep(musicNextT, eighth); musicNextT += eighth; musicBeat++; }
+}
+function startMusic(){
+  if(musicPlaying || save.muted || !save.music) return;
+  const ctx = audioReady(); if(!ctx) return;
+  musicPlaying = true; musicBeat = 0; musicNextT = ctx.currentTime + 0.18;
+  musicBus.gain.cancelScheduledValues(ctx.currentTime);
+  musicBus.gain.setValueAtTime(0.0001, ctx.currentTime);
+  musicBus.gain.exponentialRampToValueAtTime(MUSIC.vol, ctx.currentTime + 1.6);
+  musicTimer = setInterval(musicTick, 25);
+}
+function stopMusic(){
+  if(!musicPlaying) return;
+  musicPlaying = false;
+  if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
+  const ctx = audioCtx; if(!ctx || !musicBus) return;
+  const now = ctx.currentTime;
+  musicBus.gain.cancelScheduledValues(now);
+  musicBus.gain.setValueAtTime(Math.max(0.0001, musicBus.gain.value), now);
+  musicBus.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+}
+function maybeStartMusic(){ if(save.music && !save.muted) startMusic(); }
+// Unlock the AudioContext + start music on the very first interaction.
+["pointerdown","keydown"].forEach(ev => window.addEventListener(ev, function k(){ audioReady(); maybeStartMusic(); }, { once:true }));
+function refreshMusicBtn(){
+  ["#music-btn-title","#music-btn-play"].forEach(sel => { const b = $(sel); if(b){ b.textContent = "🎵"; b.classList.toggle("is-off", !save.music); } });
+}
+function toggleMusic(){
+  save.music = !save.music; persist(); refreshMusicBtn();
+  if(save.music){ maybeStartMusic(); if(!save.muted) playSound("tap"); } else stopMusic();
 }
 
 // =========================================================
 //  Screen navigation
 // =========================================================
 function showScreen(name){
+  // Leaving the board mid-compare: cancel pending flip-back/lock timers and
+  // release the input block so a stale callback can't touch the next board.
+  if(name!=="play"){ clearGameTimers(); game.busy = false; game.first = null; }
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("#screen-"+name).classList.add("active");
   if(name==="select") renderSelect();
@@ -497,10 +690,7 @@ function renderSelect(){
     // group consecutive levels of the same world under a label
     if(theme.worldKey!==lastWorld){
       lastWorld = theme.worldKey;
-      const wl = document.createElement("div");
-      wl.className = "world-label";
-      wl.textContent = t(theme.worldKey);
-      grid.appendChild(wl);
+      appendEl(grid, "div", "world-label", t(theme.worldKey));
     }
     const locked = i > save.unlockedLevel;
     const stars = save.starsByLevel[i]||0;
@@ -530,7 +720,24 @@ const game = {
   totalPairs:0,
   moves:0,          // a "move" = a pair of flips
   mismatches:0,
+  timers:[],        // pending compare-window timeouts, cancelled when the level resets
 };
+
+// Schedule a timeout tied to the current level. Tracking it means a stale
+// flip-back / lock can't fire on the next board if the player leaves mid-compare.
+function gameTimeout(fn, ms){
+  const id = setTimeout(()=>{
+    game.timers = game.timers.filter(x=>x!==id);
+    fn();
+  }, ms);
+  game.timers.push(id);
+  return id;
+}
+// Cancel every pending compare-window timeout and release the input block.
+function clearGameTimers(){
+  game.timers.forEach(clearTimeout);
+  game.timers = [];
+}
 
 // =========================================================
 //  Build + play a level
@@ -538,6 +745,7 @@ const game = {
 function startLevel(i){
   const lv = LEVELS[i];
   const theme = THEMES[lv.themeKey];
+  clearGameTimers();   // drop any compare-window timers from the previous board
   game.levelIndex = i;
   game.first = null;
   game.busy = false;
@@ -565,18 +773,9 @@ function startLevel(i){
   // keep the board comfortably within a phone's width: cap by columns
   board.style.maxWidth = Math.min(560, lv.cols*96) + "px";
   board.innerHTML = "";
-  deck.forEach((pic)=>{
-    const btn = document.createElement("button");
-    btn.className = "card";
-    btn.type = "button";
-    btn.innerHTML = `
-      <div class="inner">
-        <div class="face back">${cardBackSVG()}</div>
-        <div class="face front">${pic}</div>
-      </div>`;
-    const cardObj = {el:btn, picture:pic, matched:false};
-    btn.addEventListener("click", ()=>onCardClick(cardObj));
-    board.appendChild(btn);
+  deck.forEach((pic, idx)=>{
+    const cardObj = buildCard(pic, idx);
+    board.appendChild(cardObj.el);
     game.cards.push(cardObj);
   });
 
@@ -584,18 +783,43 @@ function startLevel(i){
   showScreen("play");
 }
 
-// Cute patterned card-back: a "?" over dotted motif (uses the theme accent via currentColor).
-function cardBackSVG(){
+// Build one card button (face-down) and wire its click. Returns { el, picture, matched }.
+function buildCard(pic, idx){
+  const btn = document.createElement("button");
+  btn.className = "card";
+  btn.type = "button";
+  // Accessible label: a face-down card the player can flip. State is refreshed on flip/match.
+  btn.setAttribute("aria-label", t("findPairs"));
+  btn.innerHTML = `
+    <div class="inner">
+      <div class="face back">${cardBackSVG()}</div>
+      <div class="face front">${pic}</div>
+    </div>`;
+  const cardObj = {el:btn, picture:pic, matched:false};
+  btn.addEventListener("click", ()=>onCardClick(cardObj));
+  return cardObj;
+}
+// Reflect a card's flipped/matched state to assistive tech.
+function setCardAria(card){
+  if(card.matched) card.el.setAttribute("aria-label", card.picture + " — " + t("found"));
+  else if(card.el.classList.contains("flipped")) card.el.setAttribute("aria-label", card.picture);
+  else card.el.setAttribute("aria-label", t("findPairs"));
+}
+
+// Player-customizable card back: a full-bleed colour + dotted motif + chosen symbol.
+function cardBackSVG(cz){
+  cz = cz || save.cosmetics || DEFAULT_COSMETICS;
   return `<svg viewBox="0 0 60 80" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <defs>
       <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse">
-        <circle cx="7" cy="7" r="2.2" fill="#ffffff" opacity=".28"/>
+        <circle cx="7" cy="7" r="2.2" fill="#ffffff" opacity=".26"/>
       </pattern>
     </defs>
+    <rect x="0" y="0" width="60" height="80" fill="${cz.back}"/>
     <rect x="0" y="0" width="60" height="80" fill="url(#dots)"/>
-    <circle cx="30" cy="40" r="17" fill="#ffffff" opacity=".22"/>
+    <circle cx="30" cy="40" r="17" fill="#ffffff" opacity=".20"/>
     <text x="30" y="52" font-size="30" font-weight="900" text-anchor="middle"
-          fill="#ffffff" font-family="Comic Sans MS, system-ui, sans-serif">?</text>
+          fill="#ffffff" font-family="Comic Sans MS, system-ui, sans-serif">${cz.motif}</text>
   </svg>`;
 }
 
@@ -608,6 +832,7 @@ function onCardClick(card){
 
   // flip this card up
   card.el.classList.add("flipped");
+  setCardAria(card);
   playSound("flip");
 
   if(!game.first){
@@ -616,7 +841,9 @@ function onCardClick(card){
     return;
   }
 
-  // second card — this completes a move
+  // second card — this completes a move. Block input for the whole compare
+  // window so a rapid third tap can't start another comparison.
+  game.busy = true;
   game.moves++;
   $("#moves-pill").textContent = "🔁 " + game.moves;
   const a = game.first, b = card;
@@ -624,31 +851,31 @@ function onCardClick(card){
 
   if(a.picture === b.picture){
     // MATCH — lock both, celebrate
-    game.busy = true;
-    setTimeout(()=>{
+    gameTimeout(()=>{
       [a,b].forEach(c=>{
         c.matched = true;
         c.el.classList.add("matched","pop");
-        setTimeout(()=>c.el.classList.remove("pop"), 460);
+        setCardAria(c);
+        gameTimeout(()=>c.el.classList.remove("pop"), 460);
       });
       playSound("match");
       game.found++;
       updateProgressUI();
       game.busy = false;
-      if(game.found >= game.totalPairs) setTimeout(completeLevel, 650);
+      if(game.found >= game.totalPairs) gameTimeout(completeLevel, 650);
     }, 280);   // let the flip finish before locking
   }else{
-    // MISMATCH — block input, but let the player SEE the second card first.
+    // MISMATCH — input stays blocked, but let the player SEE the second card first.
     // The flip animation is .5s, so we hold both cards face-up for a beat
     // before the "oops" sound + wobble, then flip them back.
-    game.busy = true;
     game.mismatches++;
-    setTimeout(()=>{
+    gameTimeout(()=>{
       playSound("mismatch");
       a.el.classList.add("shake"); b.el.classList.add("shake");
-      setTimeout(()=>{
+      gameTimeout(()=>{
         a.el.classList.remove("flipped","shake");
         b.el.classList.remove("flipped","shake");
+        setCardAria(a); setCardAria(b);
         game.busy = false;
       }, 650);
     }, 650);   // reveal pause — both cards stay up long enough to read
@@ -764,7 +991,7 @@ function refreshMute(){
   $("#mute-btn-title").textContent = icon;
   $("#mute-btn-play").textContent = icon;
 }
-function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(!save.muted) playSound("tap"); }
+function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(save.muted){ stopMusic(); } else { playSound("tap"); maybeStartMusic(); } }
 
 // =========================================================
 //  Language (string table) — applies text + page direction
@@ -785,6 +1012,41 @@ function applyLanguage(){
 function toggleLanguage(){ save.lang = (save.lang==="he"?"en":"he"); persist(); applyLanguage(); playSound("tap"); }
 
 // =========================================================
+//  Cosmetics customizer (card-back colour + symbol)
+// =========================================================
+const COSMETIC_COLORS = ["#8a7bff","#6a58e0","#ff7a9c","#ff5a5a","#ffa64d","#ffd166","#5fbf6a","#2bb5a0","#4bb6e8","#3a3340","#f4628a"];
+const COSMETIC_MOTIFS = ["?","★","♥","◆","✦","☻"];
+
+// Apply the chosen back colour to any cards already in the DOM (via CSS var).
+function applyCosmetics(){ document.documentElement.style.setProperty("--card-back", save.cosmetics.back); }
+
+function czRow(labelText, opts, key){
+  const cur = save.cosmetics[key];
+  const row = document.createElement("div"); row.className = "cz-row";
+  const lbl = document.createElement("div"); lbl.className = "cz-label"; lbl.textContent = labelText;
+  const wrap = document.createElement("div"); wrap.className = "cz-opts";
+  opts.forEach(o=>{
+    const b = document.createElement("button"); b.type = "button";
+    b.className = "cz-sw" + (cur===o.val ? " sel" : "");
+    b.style.background = o.bg;
+    if(o.label) b.textContent = o.label;
+    b.setAttribute("aria-label", o.val);
+    b.addEventListener("click", ()=>setCosmetic(key, o.val));
+    wrap.appendChild(b);
+  });
+  row.appendChild(lbl); row.appendChild(wrap); return row;
+}
+function renderCustomizer(){
+  const prev = $("#cz-preview"); if(prev) prev.innerHTML = cardBackSVG(save.cosmetics);
+  const rows = $("#cz-rows"); rows.innerHTML = "";
+  rows.appendChild(czRow(t("cz_color"), COSMETIC_COLORS.map(c=>({val:c, bg:c})), "back"));
+  rows.appendChild(czRow(t("cz_motif"), COSMETIC_MOTIFS.map(m=>({val:m, bg:save.cosmetics.back, label:m})), "motif"));
+}
+function setCosmetic(key,val){ save.cosmetics[key]=val; persist(); applyCosmetics(); renderCustomizer(); playSound("tap"); }
+function openCustomizer(){ renderCustomizer(); $("#cz").classList.add("open"); }
+function closeCustomizer(){ $("#cz").classList.remove("open"); }
+
+// =========================================================
 //  Wiring + init
 // =========================================================
 document.addEventListener("click", e=>{
@@ -792,14 +1054,19 @@ document.addEventListener("click", e=>{
   if(go) showScreen(go.getAttribute("data-go"));
 });
 $("#play-btn").addEventListener("click", ()=>{ playSound("tap"); showScreen("select"); });
+$("#customize-btn").addEventListener("click", ()=>{ playSound("tap"); openCustomizer(); });
+$("#cz-done").addEventListener("click", ()=>{ playSound("tap"); closeCustomizer(); });
+$("#cz").addEventListener("click", e=>{ if(e.target.id==="cz") closeCustomizer(); });
 $("#mute-btn-title").addEventListener("click", toggleMute);
 $("#mute-btn-play").addEventListener("click", toggleMute);
+$("#music-btn-title").addEventListener("click", toggleMusic);
+$("#music-btn-play").addEventListener("click", toggleMusic);
 $("#lang-btn").addEventListener("click", toggleLanguage);
 $("#reset-btn").addEventListener("click", ()=>{
   if(confirm(t("resetConfirm"))){
-    const lang = save.lang;                 // keep the chosen language across a reset
-    save = {...DEFAULT_SAVE, lang};
-    persist(); refreshMute();
+    const lang = save.lang;                 // keep language + cosmetics across a reset
+    save = {...DEFAULT_SAVE, lang, cosmetics:{...save.cosmetics}};
+    persist(); refreshMute(); applyCosmetics();
     if($("#screen-select").classList.contains("active")) renderSelect();
     alert(t("resetDone"));
   }
@@ -807,7 +1074,9 @@ $("#reset-btn").addEventListener("click", ()=>{
 
 // init
 buildBackground();
+applyCosmetics();
 refreshMute();
+refreshMusicBtn();
 applyLanguage();
 </script>
 </body>

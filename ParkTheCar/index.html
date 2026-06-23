@@ -71,6 +71,7 @@
     font-size:1.4rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.1);
   }
   .icon-btn:active{transform:translateY(2px);}
+  .icon-btn.is-off{opacity:.4; filter:grayscale(1);}
   .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
 
   /* ---------- Title screen ---------- */
@@ -164,10 +165,19 @@
     100%{transform:scale(1.6) translateY(-12px); opacity:0;}
   }
 
-  /* ---------- Touch controls ---------- */
+  /* ---------- Drive bar: steering wheel + touch controls ---------- */
+  /* direction:ltr keeps the steer buttons physically left/right even in RTL */
+  .drivebar{
+    display:flex; align-items:center; justify-content:center; gap:22px;
+    margin:12px 2px 0; direction:ltr;
+  }
+  .wheel-wrap{flex:0 0 auto;}
+  #wheel{width:88px; height:88px; display:block;}
+  #wheel-rot{transform-box:fill-box; transform-origin:50% 50%;}
+  @media (max-width:380px){ #wheel{width:72px; height:72px;} .drivebar{gap:12px;} }
   .pad{
     display:flex; align-items:center; justify-content:center; gap:18px;
-    margin:12px 2px 0; user-select:none;
+    margin:0; user-select:none; direction:ltr;
   }
   .pad-col{display:flex; flex-direction:column; gap:10px; align-items:center;}
   .pad-row{display:flex; gap:10px; align-items:center;}
@@ -233,6 +243,28 @@
   @keyframes bob{0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);}}
   @keyframes pop{0%{transform:scale(.4);} 70%{transform:scale(1.15);} 100%{transform:scale(1);}}
   @keyframes confetti-fall{from{transform:translateY(-30px) rotate(0);} to{transform:translateY(105vh) rotate(540deg); opacity:.9;}}
+
+
+  /* ---------- Cosmetics customizer (overlay) ---------- */
+  .cz-wrap{position:fixed; inset:0; z-index:80; display:none; align-items:center;
+    justify-content:center; background:rgba(20,30,45,.5); padding:16px;}
+  .cz-wrap.open{display:flex;}
+  .cz-card{background:var(--cream,#fff8ef); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px; max-width:380px; width:100%; max-height:90vh; overflow:auto; text-align:center;}
+  .cz-title{font-weight:900; font-size:1.4rem; margin:2px 0 8px; color:var(--blue-deep,#3a7fd6);}
+  .cz-preview{display:flex; justify-content:center; align-items:center; height:90px; margin:4px 0 12px;}
+  .cz-preview svg{width:170px; height:85px;}
+  .cz-row{margin:12px 0; text-align:start;}
+  .cz-label{font-weight:800; font-size:.95rem; margin-bottom:7px; color:var(--ink,#2c3e57);}
+  .cz-opts{display:flex; flex-wrap:wrap; gap:9px;}
+  .cz-sw{width:38px; height:38px; border-radius:50%; border:3px solid #fff; cursor:pointer;
+    padding:0; box-shadow:0 0 0 2px rgba(0,0,0,.14); transition:transform .08s;}
+  .cz-sw:active{transform:scale(.92);}
+  .cz-sw.sel{box-shadow:0 0 0 3px var(--ink,#2c3e57);}
+  .cz-sw.none{background:#fff; position:relative; overflow:hidden;}
+  .cz-sw.none:after{content:""; position:absolute; left:46%; top:-20%; width:3px; height:140%;
+    background:#e06; transform:rotate(45deg);}
+  .cz-done{margin-top:10px;}
 </style>
 </head>
 <body>
@@ -243,11 +275,13 @@
     <div class="hero">
       <div class="logo"><span class="em">🚗</span> <span data-i18n="title">Park the Car</span></div>
       <p class="tagline" data-i18n="tagline">Steer into the spot without bumping!</p>
-      <div class="title-cars"><span>🚙</span><span>🅿️</span><span>🚗</span><span>🚥</span><span>🚕</span></div>
+      <div class="title-cars" aria-hidden="true"><span>🚙</span><span>🅿️</span><span>🚗</span><span>🚥</span><span>🚕</span></div>
       <div class="title-actions">
         <button class="btn big" id="play-btn" data-i18n="play">▶ Play</button>
+        <button class="btn ghost" id="customize-btn" data-i18n="customize">🎨 Customize</button>
         <div style="display:flex; gap:10px; align-items:center;">
           <button class="icon-btn" id="mute-btn-title" data-i18n-title="sound" title="Sound">🔊</button>
+          <button class="icon-btn" id="music-btn-title" data-i18n-title="music" title="Music">🎵</button>
           <button class="mini-link" id="lang-btn">עברית</button>
           <button class="mini-link" id="reset-btn" data-i18n="reset">Reset progress</button>
         </div>
@@ -258,7 +292,7 @@
   <!-- ============ LEVEL SELECT ============ -->
   <section class="screen" id="screen-select">
     <div class="select-head">
-      <button class="icon-btn" data-go="title">🏠</button>
+      <button class="icon-btn" data-go="title" aria-label="Home">🏠</button>
       <div class="level-tag" style="flex:1"><span data-i18n="pickLevel">Pick a Spot</span><small data-i18n="pickSub">your parking adventure</small></div>
       <div class="lang-pill" id="lang-pill-select">🇬🇧 EN</div>
     </div>
@@ -273,6 +307,7 @@
       <div class="level-tag" id="play-level">Level<small>Parking</small></div>
       <div class="spacer"></div>
       <button class="icon-btn" id="mute-btn-play" data-i18n-title="sound" title="Sound">🔊</button>
+      <button class="icon-btn" id="music-btn-play" data-i18n-title="music" title="Music">🎵</button>
     </div>
 
     <div class="topbar" style="margin-bottom:6px;">
@@ -286,14 +321,32 @@
       <div class="hint" id="hint" data-i18n="hint">Park without crashing!</div>
     </div>
 
-    <!-- on-screen touch controls (also usable with the mouse) -->
-    <div class="pad" id="pad">
-      <button class="pedal steer" data-key="left" aria-label="left">◀</button>
-      <div class="pad-col">
-        <button class="pedal gas" data-key="up" aria-label="gas">▲</button>
-        <button class="pedal rev" data-key="down" aria-label="reverse">▼</button>
+    <!-- drive bar: steering wheel (always shown) + touch pedals (hidden on non-touch) -->
+    <div class="drivebar">
+      <div class="wheel-wrap" aria-hidden="true">
+        <!-- spokes at 9/3/6 only + a top marker, so the wheel reads asymmetrically (up != down) -->
+        <svg id="wheel" viewBox="0 0 100 100">
+          <g id="wheel-rot">
+            <circle cx="50" cy="50" r="43" fill="none" stroke="#39455c" stroke-width="11"/>
+            <circle cx="50" cy="50" r="43" fill="none" stroke="#5b6b86" stroke-width="4"/>
+            <line x1="50" y1="50" x2="11" y2="50" stroke="#39455c" stroke-width="11" stroke-linecap="round"/>
+            <line x1="50" y1="50" x2="89" y2="50" stroke="#39455c" stroke-width="11" stroke-linecap="round"/>
+            <line x1="50" y1="50" x2="50" y2="89" stroke="#39455c" stroke-width="11" stroke-linecap="round"/>
+            <circle cx="50" cy="9" r="8" fill="#ffd23f" stroke="#39455c" stroke-width="2.5"/>
+            <circle cx="50" cy="50" r="21" fill="#39455c"/>
+            <circle cx="50" cy="50" r="21" fill="none" stroke="#5b6b86" stroke-width="3"/>
+            <circle cx="50" cy="50" r="9" fill="#5b6b86"/>
+          </g>
+        </svg>
       </div>
-      <button class="pedal steer" data-key="right" aria-label="right">▶</button>
+      <div class="pad" id="pad" role="group" aria-label="Driving controls">
+        <button class="pedal steer" type="button" data-key="left" aria-label="Steer left">◀</button>
+        <div class="pad-col">
+          <button class="pedal gas" type="button" data-key="up" aria-label="Drive forward">▲</button>
+          <button class="pedal rev" type="button" data-key="down" aria-label="Reverse">▼</button>
+        </div>
+        <button class="pedal steer" type="button" data-key="right" aria-label="Steer right">▶</button>
+      </div>
     </div>
   </section>
 
@@ -314,6 +367,16 @@
 
 </div>
 <div id="fx"></div>
+
+<!-- ============ COSMETICS CUSTOMIZER ============ -->
+<div class="cz-wrap" id="cz" role="dialog" aria-modal="true">
+  <div class="cz-card">
+    <div class="cz-title" data-i18n="cz_title">Style your car</div>
+    <div class="cz-preview" id="cz-preview" aria-hidden="true"></div>
+    <div id="cz-rows"></div>
+    <button class="btn green cz-done" id="cz-done" data-i18n="cz_done">Done</button>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -459,13 +522,13 @@ const LEVELS = [
       {x:50, y:66, w:100, h:8, kind:"wall"},
     ]},
 
-  // 12 · navigate: two-turn slalom through staggered walls
-  {nameKey:"lvl_maze", worldKey:"world_master", emoji:"🏁", lives:2,
-    spawn:{x:14, y:55, heading:-90},
-    goal:{x:84, y:14, w:18, h:11, heading:0},
+  // 12 · two-turn slalom. Gaps are ~25 units so the 5.4-wide car fits and can turn.
+  {nameKey:"lvl_maze", worldKey:"world_master", emoji:"🏁", lives:3,
+    spawn:{x:15, y:53, heading:0},
+    goal:{x:84, y:18, w:18, h:11, heading:0},
     obstacles:[
-      {x:34, y:40, w:10, h:60, kind:"wall"},    // gap at the top
-      {x:66, y:30, w:10, h:60, kind:"wall"},    // gap at the bottom
+      {x:36, y:22, w:8, h:36, kind:"wall"},     // pass below (gap y40..65)
+      {x:62, y:48, w:8, h:34, kind:"wall"},     // pass above (gap y5..31)
     ]},
 
   // 13 · finale: tightest gap of all, off-centre spawn, cones flanking the entry
@@ -488,7 +551,14 @@ const I18N = {
     tagline:"Steer into the spot without bumping!",
     play:"▶ Play",
     sound:"Sound",
+    music:"Music",
     reset:"Reset progress",
+    customize:"🎨 Customize",
+    cz_title:"Style your car",
+    cz_color:"Car colour",
+    cz_stripe:"Stripes",
+    cz_none:"None",
+    cz_done:"Done",
     pickLevel:"Pick a Spot",
     pickSub:"your parking adventure",
     back:"Back",
@@ -521,7 +591,14 @@ const I18N = {
     tagline:"היגוי אל החניה בלי להתנגש!",
     play:"▶ שחקו",
     sound:"צליל",
+    music:"מוזיקה",
     reset:"איפוס התקדמות",
+    customize:"🎨 התאמה אישית",
+    cz_title:"שדרגו את הרכב",
+    cz_color:"צבע הרכב",
+    cz_stripe:"פסים",
+    cz_none:"בלי",
+    cz_done:"סיום",
     pickLevel:"בחרו חניה",
     pickSub:"הרפתקת החניה שלך",
     back:"חזרה",
@@ -563,8 +640,11 @@ function bumpsText(m){ return m===0 ? t("perfect") : (m===1 ? t("bump_one") : m+
 //  Persistent save (progress tracked separately per language)
 // =========================================================
 const SAVE_KEY = "parkTheCar.save";
+// Cosmetics are player-chosen and shared (not per-language).
+const DEFAULT_COSMETICS = {body:"#ffd23f", stripe:"none"};
 const DEFAULT_SAVE = {
-  lang:DEFAULT_LANG, muted:false,
+  lang:DEFAULT_LANG, muted:false, music:true,
+  cosmetics:{...DEFAULT_COSMETICS},
   progress:{ he:{unlockedLevel:0, starsByLevel:{}}, en:{unlockedLevel:0, starsByLevel:{}} },
 };
 function loadSave(){
@@ -572,6 +652,7 @@ function loadSave(){
     const raw = localStorage.getItem(SAVE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
     const s = {...DEFAULT_SAVE, ...parsed};
+    s.cosmetics = {...DEFAULT_COSMETICS, ...(parsed.cosmetics||{})};
     s.progress = {...DEFAULT_SAVE.progress, ...(parsed.progress||{})};
     for(const lng of ["he","en"]){
       s.progress[lng] = {unlockedLevel:0, starsByLevel:{}, ...(s.progress[lng]||{})};
@@ -595,52 +676,163 @@ const DEG = Math.PI/180;
 // =========================================================
 //  Sound (tiny Web Audio cues — no files)
 // =========================================================
-let audioCtx = null;
-function beep(freq, start, dur, type="sine", gain=0.15){
-  if(save.muted) return;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const t0 = audioCtx.currentTime + start;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = type; osc.frequency.value = freq;
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(gain, t0+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(t0); osc.stop(t0+dur);
-  }catch(e){}
+// Pure Web Audio: no files, no libraries, no network.
+//   tone()  = one ADSR voice (optional detune/glide/filter/echo)
+//   noise() = filtered noise burst for percussive cues
+//   arp()   = quick chord/arpeggio for happy cues
+// A shared compressor + a feedback-delay "sparkle" send keep stacked
+// notes from clipping and add a touch of space.
+let audioCtx = null, sfxBus = null, musicBus = null, fxDelay = null;
+const midi = m => 440 * Math.pow(2, (m - 69) / 12);   // MIDI note → Hz
+function audio(){
+  if(audioCtx) return audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  try{ audioCtx = new AC(); }catch(e){ return null; }
+  const comp = audioCtx.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.knee.value = 26; comp.ratio.value = 3.5;
+  comp.attack.value = 0.004; comp.release.value = 0.25; comp.connect(audioCtx.destination);
+  fxDelay = audioCtx.createDelay(0.5); fxDelay.delayTime.value = 0.17;
+  const fb = audioCtx.createGain(); fb.gain.value = 0.24;
+  const wet = audioCtx.createGain(); wet.gain.value = 0.45;
+  fxDelay.connect(fb); fb.connect(fxDelay); fxDelay.connect(wet); wet.connect(comp);
+  sfxBus = audioCtx.createGain(); sfxBus.gain.value = 0.85; sfxBus.connect(comp);
+  musicBus = audioCtx.createGain(); musicBus.gain.value = 0.0001; musicBus.connect(comp);
+  return audioCtx;
 }
-// short filtered-noise burst — the metal "crash" thud
-function noiseBurst(dur=0.22, gain=0.18, lp=900){
-  if(save.muted) return;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const t0 = audioCtx.currentTime;
-    const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate*dur), audioCtx.sampleRate);
-    const data = buf.getChannelData(0);
-    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 2); }
-    const src = audioCtx.createBufferSource(); src.buffer = buf;
-    const filt = audioCtx.createBiquadFilter(); filt.type="lowpass"; filt.frequency.value = lp;
-    const g = audioCtx.createGain(); g.gain.value = gain;
-    src.connect(filt); filt.connect(g); g.connect(audioCtx.destination);
-    src.start(t0);
-  }catch(e){}
+function audioReady(){ const c = audio(); if(c && c.state === "suspended") c.resume(); return c; }
+function tone(o){
+  const ctx = audioReady(); if(!ctx) return;
+  const t0 = (o.at != null) ? o.at : ctx.currentTime + (o.t || 0);
+  const dur = o.dur != null ? o.dur : 0.2;
+  const peak = o.gain != null ? o.gain : 0.15;
+  const atk = o.attack != null ? o.attack : 0.012;
+  const rel = o.release != null ? o.release : Math.min(dur, 0.18);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + atk);
+  g.gain.setValueAtTime(peak, t0 + Math.max(atk, dur - rel));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let sink = g;
+  if(o.cutoff){
+    const lp = ctx.createBiquadFilter(); lp.type = o.filter || "lowpass";
+    lp.frequency.value = o.cutoff; lp.Q.value = o.q != null ? o.q : 0.7;
+    lp.connect(g); sink = lp;
+  }
+  for(const d of (o.fat ? [-6, 6] : [0])){
+    const osc = ctx.createOscillator();
+    osc.type = o.type || "sine";
+    osc.frequency.setValueAtTime(o.freq, t0);
+    if(o.glideTo) osc.frequency.exponentialRampToValueAtTime(o.glideTo, t0 + dur);
+    osc.detune.value = (o.detune || 0) + d;
+    osc.connect(sink); osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+  g.connect(o.bus || sfxBus);
+  if(o.echo && fxDelay) g.connect(fxDelay);
 }
-// a soft looping-ish engine rumble while driving (retriggered, gated by a cooldown)
+function noise(o){
+  const ctx = audioReady(); if(!ctx) return;
+  const t0 = (o.at != null) ? o.at : ctx.currentTime + (o.t || 0);
+  const dur = o.dur != null ? o.dur : 0.2;
+  const n = Math.max(1, Math.floor(ctx.sampleRate * dur));
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  const curve = o.curve != null ? o.curve : 2;
+  for(let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, curve);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = o.filter || "lowpass";
+  filt.frequency.value = o.cutoff != null ? o.cutoff : 1200;
+  filt.Q.value = o.q != null ? o.q : 0.8;
+  const g = ctx.createGain(); g.gain.value = o.gain != null ? o.gain : 0.15;
+  src.connect(filt); filt.connect(g); g.connect(o.bus || sfxBus);
+  if(o.echo && fxDelay) g.connect(fxDelay);
+  src.start(t0); src.stop(t0 + dur + 0.02);
+}
+function arp(root, intervals, opts){
+  const o = opts || {};
+  intervals.forEach((iv, i) => tone({
+    freq: midi(root + iv), t: (o.t || 0) + i * (o.step != null ? o.step : 0.09),
+    dur: o.dur != null ? o.dur : 0.3, type: o.type || "triangle",
+    gain: o.gain != null ? o.gain : 0.13, attack: 0.006, release: 0.22,
+    echo: true, fat: o.fat, cutoff: o.cutoff || 2600
+  }));
+}
+// Back-compat: existing call sites use beep(freq,start,dur,type,gain).
+function beep(freq, start, dur, type = "sine", gain = 0.15){
+  if(save.muted) return;
+  tone({ freq, t: start, dur, type, gain, cutoff: (type === "square" || type === "sawtooth") ? 2800 : 0 });
+}
+// A warm, filtered engine rumble while driving (retriggered, gated by a cooldown).
 let lastEngine = 0;
 function engineSound(){
   if(save.muted) return;
   const now = performance.now();
-  if(now - lastEngine < 130) return;   // don't spam an oscillator every frame
+  if(now - lastEngine < 130) return;   // don't spawn an oscillator every frame
   lastEngine = now;
-  beep(90 + Math.random()*30, 0, .12, "sawtooth", .04);
+  tone({ freq: 88 + Math.random()*26, dur: 0.16, type: "sawtooth", gain: 0.035, attack: 0.02, release: 0.12, cutoff: 340, q: 3 });
 }
 function playSound(type){
-  if(type==="crash"){ noiseBurst(.24,.2,800); beep(150,0,.18,"square",.12); beep(90,.05,.2,"sawtooth",.1); }
-  else if(type==="win"){ [523,659,784,1046].forEach((f,i)=>beep(f,i*.12,.25,"triangle")); }
-  else if(type==="park"){ beep(660,0,.13,"triangle"); beep(990,.1,.2,"triangle"); }
-  else if(type==="tap"){ beep(440,0,.05,"square",.06); }
+  if(save.muted) return;
+  if(type==="crash"){ noise({dur:0.26,gain:0.22,filter:"lowpass",cutoff:700,curve:2}); tone({freq:150,glideTo:70,dur:0.24,type:"square",gain:0.12,cutoff:900,attack:0.002,release:0.2}); }
+  else if(type==="win"){ arp(57,[0,4,7,12,16,19],{step:0.1,gain:0.13,dur:0.4,fat:true}); }
+  else if(type==="park"){ tone({freq:660,dur:0.12,type:"triangle",gain:0.11,echo:true,cutoff:3000}); tone({freq:990,t:0.1,dur:0.2,type:"triangle",gain:0.1,echo:true,cutoff:3200}); }
+  else if(type==="tap"){ tone({freq:520,dur:0.06,type:"triangle",gain:0.07,attack:0.003,release:0.05,cutoff:3000}); }
+}
+
+// Ambient music — generative loop via a lookahead scheduler.
+// Bass + pad per bar, sprinkled pentatonic melody, light shaker. Own bus, low volume under the SFX.
+const MUSIC = { tempo:84, root:57, wave:"triangle", vol:0.40,
+  scale:[0,2,4,7,9], prog:[0,5,7,3], chord:[0,4,7], melodyAt:[2,3,5,6,7], shaker:true };
+let musicTimer = null, musicBeat = 0, musicNextT = 0, musicPlaying = false;
+function musicStep(at, eighth){
+  const m = MUSIC, SPB = 8, step = musicBeat % SPB;
+  const cr = m.root + m.prog[Math.floor(musicBeat / SPB) % m.prog.length];
+  if(step === 0){
+    tone({ at, freq: midi(cr - 12), dur: eighth * SPB * 0.92, type: "sine", gain: 0.085, attack: 0.05, release: 0.7, bus: musicBus });
+    m.chord.forEach((iv, k) => tone({ at: at + k * 0.012, freq: midi(cr + iv), dur: eighth * SPB * 0.96, type: m.wave, gain: 0.04, attack: 0.3, release: 0.9, fat: true, cutoff: 1900, bus: musicBus }));
+  } else if(step === 4){
+    tone({ at, freq: midi(cr - 12), dur: eighth * 3, type: "sine", gain: 0.055, attack: 0.04, release: 0.4, bus: musicBus });
+  }
+  if(m.melodyAt.includes(step) && Math.random() < 0.7){
+    const deg = m.scale[Math.floor(Math.random() * m.scale.length)] + (Math.random() < 0.25 ? 12 : 0);
+    tone({ at, freq: midi(cr + 12 + deg), dur: 0.34, type: "triangle", gain: 0.05, attack: 0.006, release: 0.3, echo: true, cutoff: 3200, bus: musicBus });
+  }
+  if(m.shaker && step % 2 === 1) noise({ at, dur: 0.05, gain: 0.012, filter: "highpass", cutoff: 6000, curve: 1, bus: musicBus });
+}
+function musicTick(){
+  const ctx = audioCtx; if(!ctx || !musicPlaying) return;
+  const eighth = 60 / MUSIC.tempo / 2;
+  while(musicNextT < ctx.currentTime + 0.12){ musicStep(musicNextT, eighth); musicNextT += eighth; musicBeat++; }
+}
+function startMusic(){
+  if(musicPlaying || save.muted || !save.music) return;
+  const ctx = audioReady(); if(!ctx) return;
+  musicPlaying = true; musicBeat = 0; musicNextT = ctx.currentTime + 0.18;
+  musicBus.gain.cancelScheduledValues(ctx.currentTime);
+  musicBus.gain.setValueAtTime(0.0001, ctx.currentTime);
+  musicBus.gain.exponentialRampToValueAtTime(MUSIC.vol, ctx.currentTime + 1.6);
+  musicTimer = setInterval(musicTick, 25);
+}
+function stopMusic(){
+  if(!musicPlaying) return;
+  musicPlaying = false;
+  if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
+  const ctx = audioCtx; if(!ctx || !musicBus) return;
+  const now = ctx.currentTime;
+  musicBus.gain.cancelScheduledValues(now);
+  musicBus.gain.setValueAtTime(Math.max(0.0001, musicBus.gain.value), now);
+  musicBus.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+}
+function maybeStartMusic(){ if(save.music && !save.muted) startMusic(); }
+// Unlock the AudioContext + start music on the very first interaction.
+["pointerdown","keydown"].forEach(ev => window.addEventListener(ev, function k(){ audioReady(); maybeStartMusic(); }, { once:true }));
+function refreshMusicBtn(){
+  ["#music-btn-title","#music-btn-play"].forEach(sel => { const b = $(sel); if(b){ b.textContent = "🎵"; b.classList.toggle("is-off", !save.music); } });
+}
+function toggleMusic(){
+  save.music = !save.music; persist(); refreshMusicBtn();
+  if(save.music){ maybeStartMusic(); if(!save.muted) playSound("tap"); } else stopMusic();
 }
 
 // =========================================================
@@ -681,7 +873,17 @@ function renderSelect(){
       <div class="lc-name">${t(lv.nameKey)}</div>
       <div class="lc-sub">${"❤️".repeat(lv.lives)}</div>
       <div class="lc-stars">${starString(stars)}</div>`;
-    if(!locked) card.addEventListener("click",()=>startLevel(i));
+    if(locked){
+      card.setAttribute("aria-disabled","true");
+    }else{
+      card.setAttribute("role","button");
+      card.setAttribute("tabindex","0");
+      card.setAttribute("aria-label", t(lv.nameKey));
+      card.addEventListener("click",()=>startLevel(i));
+      card.addEventListener("keydown",e=>{
+        if(e.key==="Enter" || e.key===" "){ e.preventDefault(); startLevel(i); }
+      });
+    }
     grid.appendChild(card);
   });
 }
@@ -699,6 +901,7 @@ const game = {
   running:false,
   completed:false,
   parkHold:0,        // ms the car has rested aligned inside the goal
+  lastTs:0,          // timestamp of the previous frame (for dt)
 };
 // Held-input flags — set by BOTH the keyboard and the touch pedals.
 const input = {up:false, down:false, left:false, right:false};
@@ -714,10 +917,15 @@ const PARK_HOLD_MS = 450; // must rest aligned & inside this long to win
 
 // the arena element & its pixel size (refreshed when the level starts)
 let arenaEl = null, scale = 1, offX = 0, offY = 0;
+// cached play-screen nodes (set in buildScene) to avoid per-frame DOM lookups
+let carEl = null, glowEl = null, hintEl = null, statusEl = null;
+let wheelAngle = 0, wheelEl = null;   // steering-wheel display (eased angle, deg)
+function renderWheel(){ if(wheelEl) wheelEl.style.transform = `rotate(${wheelAngle.toFixed(1)}deg)`; }
 
 function startLevel(i){ beginRun(i); }
 
 function beginRun(i){
+  stopGame();                         // never leave a prior loop double-scheduled
   game.levelIndex = i;
   game.completed = false;
   game.bumps = 0;
@@ -728,16 +936,16 @@ function beginRun(i){
   resetCar();                       // car to spawn pose, speed 0
 
   $("#play-level").innerHTML = `${t(lv.nameKey)}<small>${t("parking")}</small>`;
-  $("#hint").textContent = t("hint");
-  $("#hint").style.display = "";
+  hintEl.textContent = t("hint");
+  hintEl.style.display = "";
   updateLivesUI();
-  $("#park-status").textContent = "";
+  setStatus("");
 
   showScreen("play");
   measureArena();
   layoutScene();                    // place goal glow + car now that we have pixels
 
-  input.up=input.down=input.left=input.right=false;
+  releaseAllInput();
   game.running = true;
   game.lastTs = performance.now();
   game.rafId = requestAnimationFrame(loop);
@@ -750,6 +958,8 @@ function resetCar(){
   game.car.heading = lv.spawn.heading;
   game.car.v = 0;
   game.parkHold = 0;
+  game.stun = 0;
+  wheelAngle = 0; renderWheel();   // re-center the wheel
 }
 
 function stopGame(){
@@ -854,6 +1064,13 @@ function buildScene(lv){
   car.id = "car";
   car.innerHTML = heroCarSVG();
   arena.insertBefore(car, $("#hint"));
+
+  // cache the hot-path nodes so the loop never re-queries the DOM
+  arenaEl = arena;
+  carEl = car;
+  glowEl = glow;
+  hintEl = $("#hint");
+  statusEl = $("#park-status");
 }
 
 // A painted parking-bay outline + a big "P" so the target is obvious.
@@ -911,10 +1128,16 @@ function sceneryDecor(){
 
 // Hero car: cute top-down body pointing RIGHT (+x), so heading 0 = no rotation.
 // width 14 x height 7 in the SVG's own pixel space; CSS sizes it from the arena.
-function heroCarSVG(){
+// cz (cosmetics) sets the body colour and an optional pair of rally stripes.
+function heroCarSVG(cz){
+  cz = cz || save.cosmetics || DEFAULT_COSMETICS;
+  const stripe = (cz.stripe && cz.stripe!=="none")
+    ? `<g fill="${cz.stripe}" opacity=".92"><rect x="6" y="13" width="128" height="6" rx="3"/><rect x="6" y="51" width="128" height="6" rx="3"/></g>`
+    : "";
   return `<svg viewBox="0 0 140 70" aria-label="car">
     <!-- body -->
-    <rect x="6" y="10" width="128" height="50" rx="16" fill="#ffd23f" stroke="#caa11f" stroke-width="3"/>
+    <rect x="6" y="10" width="128" height="50" rx="16" fill="${cz.body}" stroke="rgba(0,0,0,.28)" stroke-width="3"/>
+    ${stripe}
     <!-- windows / cabin -->
     <rect x="44" y="16" width="60" height="38" rx="10" fill="#bfe3ff" stroke="#8fc7ef" stroke-width="2"/>
     <rect x="74" y="18" width="28" height="34" rx="8" fill="#dff0ff"/>
@@ -934,14 +1157,12 @@ function heroCarSVG(){
 function layoutScene(){
   const lv = LEVELS[game.levelIndex];
   const g = lv.goal;
-  const glow = $("#goal-glow");
-  glow.style.left   = px(g.x-g.w/2) + "px";
-  glow.style.top    = py(g.y-g.h/2) + "px";
-  glow.style.width  = (g.w*scale) + "px";
-  glow.style.height = (g.h*scale) + "px";
+  glowEl.style.left   = px(g.x-g.w/2) + "px";
+  glowEl.style.top    = py(g.y-g.h/2) + "px";
+  glowEl.style.width  = (g.w*scale) + "px";
+  glowEl.style.height = (g.h*scale) + "px";
 
-  const car = $("#car");
-  car.style.width = (CAR_W*scale) + "px";   // height follows the SVG aspect (14:7)
+  carEl.style.width = (CAR_W*scale) + "px";   // height follows the SVG aspect (14:7)
   renderCar();
 }
 
@@ -949,15 +1170,25 @@ function layoutScene(){
 //  Main loop + physics (simple bicycle/kinematic model)
 // =========================================================
 function loop(ts){
-  if(!game.running) return;
+  if(!game.running){ game.rafId = null; return; }
   const dt = Math.min(50, ts - game.lastTs) / 1000;  // seconds, clamped after a tab pause
   game.lastTs = ts;
   update(dt);
-  game.rafId = requestAnimationFrame(loop);
+  // update() may have ended the run (win); only keep looping if still running
+  game.rafId = game.running ? requestAnimationFrame(loop) : null;
 }
 
 function update(dt){
   const c = game.car;
+
+  // post-crash stun: freeze the car so a still-held key (auto-repeat re-sets the
+  // flag) can't drive straight back into the wall
+  if(game.stun > 0){
+    game.stun -= dt;
+    c.v = 0;
+    renderCar();
+    return;
+  }
 
   // ---- longitudinal: gas / reverse / friction ----
   if(input.up)        c.v += ACCEL*dt;
@@ -979,6 +1210,11 @@ function update(dt){
     if(input.right) c.heading += TURN*speedFrac*dt*dir;
   }
 
+  // steering-wheel visual follows the steer input (eased), even while stopped
+  const steerInput = (input.right?1:0) - (input.left?1:0);
+  wheelAngle += ((steerInput*130) - wheelAngle) * Math.min(1, dt*14);
+  renderWheel();
+
   // engine puff + sound while actually moving
   if(Math.abs(c.v) > 1){
     engineSound();
@@ -999,7 +1235,7 @@ function update(dt){
 
   c.x = nx; c.y = ny;
 
-  $("#car").classList.toggle("reversing", c.v < -0.4);
+  carEl.classList.toggle("reversing", c.v < -0.4);
   renderCar();
   updateParkState(dt);
 }
@@ -1007,13 +1243,13 @@ function update(dt){
 // Place + rotate the car element from its unit pose.
 function renderCar(){
   const c = game.car;
-  const car = $("#car");
+  if(!carEl) return;
   // size in px (kept in sync in case the arena resized)
   const wpx = CAR_W*scale;
   const hpx = CAR_H*scale;
-  car.style.left = (px(c.x) - wpx/2) + "px";
-  car.style.top  = (py(c.y) - hpx/2) + "px";
-  car.style.transform = `rotate(${c.heading}deg)`;
+  carEl.style.left = (px(c.x) - wpx/2) + "px";
+  carEl.style.top  = (py(c.y) - hpx/2) + "px";
+  carEl.style.transform = `rotate(${c.heading}deg)`;
 }
 
 // Four corners of the oriented car rectangle, in arena units.
@@ -1082,11 +1318,13 @@ function crash(){
   if(game.lives <= 0){
     // out of lives — reset lives and start the level over (still gentle)
     game.lives = LEVELS[game.levelIndex].lives;
-    $("#park-status").textContent = "";
+    setStatus("");
   }
   updateLivesUI();
-  $("#hint").style.display = "";
+  hintEl.style.display = "";
   resetCar();
+  releaseAllInput();
+  game.stun = 1.2;     // freeze briefly so a held/auto-repeating key can't re-hit the wall
   renderCar();
 }
 
@@ -1111,20 +1349,27 @@ function updateParkState(dt){
   const aligned = headingAligned(c.heading, g.heading);
   const slow = Math.abs(c.v) < 2.2;
 
-  const glow = $("#goal-glow");
   const good = allIn && aligned;
-  glow.classList.toggle("aligned", good);
+  glowEl.classList.toggle("aligned", good);
 
   if(good && slow){
     game.parkHold += dt*1000;
-    $("#hint").style.display = "none";
-    $("#park-status").textContent = t("nearlyParked");
+    hintEl.style.display = "none";
+    setStatus(t("nearlyParked"));
     if(game.parkHold >= PARK_HOLD_MS){ winLevel(); }
   }else{
     game.parkHold = 0;
-    if(allIn && !aligned){ $("#park-status").textContent = t("aligning"); }
-    else { $("#park-status").textContent = ""; }
+    setStatus(allIn && !aligned ? t("aligning") : "");
   }
+}
+
+// Update the park-status line only when the text actually changes (avoids
+// writing the same string to the DOM every frame).
+let lastStatus = null;
+function setStatus(text){
+  if(text === lastStatus) return;
+  lastStatus = text;
+  statusEl.textContent = text;
 }
 
 // Heading within tolerance of the target OR its 180° opposite.
@@ -1247,16 +1492,28 @@ function onKeyUp(e){
   input[dir] = false;
 }
 
-// Touch pedals: pointer down/up/cancel/leave toggle the same input flags.
+// Release every held input (used on blur / tab-hide so a key/pedal can't stick).
+function releaseAllInput(){
+  input.up = input.down = input.left = input.right = false;
+  document.querySelectorAll("#pad .pedal.down").forEach(b=>b.classList.remove("down"));
+}
+
+// Touch pedals: pointer down/up/cancel toggle the same input flags as the keys.
+// Pointer capture keeps the pointerup on the button even if the finger slides
+// off, so a held pedal always releases cleanly.
 function wirePad(){
   document.querySelectorAll("#pad .pedal").forEach(btn=>{
     const dir = btn.dataset.key;
-    const press = (e)=>{ e.preventDefault(); input[dir]=true; btn.classList.add("down"); };
+    const press = (e)=>{
+      e.preventDefault();
+      input[dir] = true;
+      btn.classList.add("down");
+      if(e.pointerId!=null){ try{ btn.setPointerCapture(e.pointerId); }catch(_){} }
+    };
     const release = ()=>{ input[dir]=false; btn.classList.remove("down"); };
     btn.addEventListener("pointerdown", press);
     btn.addEventListener("pointerup", release);
     btn.addEventListener("pointercancel", release);
-    btn.addEventListener("pointerleave", release);
     // stop a held pedal from triggering text selection / context menu on long-press
     btn.addEventListener("contextmenu", e=>e.preventDefault());
   });
@@ -1270,7 +1527,7 @@ function refreshMute(){
   $("#mute-btn-title").textContent = icon;
   $("#mute-btn-play").textContent = icon;
 }
-function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(!save.muted) playSound("tap"); }
+function toggleMute(){ save.muted=!save.muted; persist(); refreshMute(); if(save.muted){ stopMusic(); } else { playSound("tap"); maybeStartMusic(); } }
 
 function applyLanguage(){
   if(!I18N[save.lang]) save.lang = DEFAULT_LANG;
@@ -1290,18 +1547,70 @@ document.addEventListener("click", e=>{
 });
 document.addEventListener("keydown", onKeyDown);
 document.addEventListener("keyup", onKeyUp);
-window.addEventListener("blur", ()=>{   // dropping focus releases all keys (avoid stuck inputs)
-  input.up=input.down=input.left=input.right=false;
+window.addEventListener("blur", ()=>{   // dropping focus releases all inputs (avoid stuck keys/pedals)
+  releaseAllInput();
   if(game.running) game.lastTs = performance.now();
 });
-// keep the car positioned correctly if the window is resized mid-level
-window.addEventListener("resize", ()=>{
-  if(currentScreen==="play"){ measureArena(); layoutScene(); }
+document.addEventListener("visibilitychange", ()=>{   // tab-switch: same safety as blur
+  if(document.hidden){
+    releaseAllInput();
+  }else if(game.running){
+    game.lastTs = performance.now();   // avoid a huge dt spike on the first frame back
+  }
 });
+// keep the car positioned correctly if the window is resized mid-level (debounced)
+let resizeTimer = null;
+window.addEventListener("resize", ()=>{
+  if(currentScreen!=="play") return;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>{ if(currentScreen==="play"){ measureArena(); layoutScene(); } }, 120);
+});
+
+// =========================================================
+//  Cosmetics customizer
+// =========================================================
+const COSMETIC_OPTS = [
+  {key:"body", labelKey:"cz_color",
+    colors:["#ffd23f","#ff5a5a","#5aa9f7","#5fbf6a","#ff8fab","#8a7bff","#ffa64d","#2bb5a0","#b6e34d","#f4f6f8","#3a3f4a"]},
+  {key:"stripe", labelKey:"cz_stripe", allowNone:true,
+    colors:["#ffffff","#2c2230","#e23b3b","#2f6fe0","#ffd166"]},
+];
+
+function renderCustomizer(){
+  const prev = $("#cz-preview"); if(prev) prev.innerHTML = heroCarSVG(save.cosmetics);
+  const rows = $("#cz-rows");
+  rows.innerHTML = "";
+  COSMETIC_OPTS.forEach(cat=>{
+    const cur = save.cosmetics[cat.key];
+    const row = document.createElement("div"); row.className = "cz-row";
+    const lbl = document.createElement("div"); lbl.className = "cz-label"; lbl.textContent = t(cat.labelKey);
+    const opts = document.createElement("div"); opts.className = "cz-opts";
+    const addSw = (val)=>{
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "cz-sw" + (val==="none"?" none":"") + (cur===val?" sel":"");
+      if(val!=="none") b.style.background = val;
+      b.setAttribute("aria-label", val==="none" ? t("cz_none") : val);
+      b.addEventListener("click", ()=>setCosmetic(cat.key, val));
+      opts.appendChild(b);
+    };
+    if(cat.allowNone) addSw("none");
+    cat.colors.forEach(addSw);
+    row.appendChild(lbl); row.appendChild(opts); rows.appendChild(row);
+  });
+}
+function setCosmetic(key,val){ save.cosmetics[key]=val; persist(); if(carEl) carEl.innerHTML = heroCarSVG(save.cosmetics); renderCustomizer(); playSound("tap"); }
+function openCustomizer(){ renderCustomizer(); $("#cz").classList.add("open"); }
+function closeCustomizer(){ $("#cz").classList.remove("open"); }
+$("#customize-btn").addEventListener("click", ()=>{ playSound("tap"); openCustomizer(); });
+$("#cz-done").addEventListener("click", ()=>{ playSound("tap"); closeCustomizer(); });
+$("#cz").addEventListener("click", e=>{ if(e.target.id==="cz") closeCustomizer(); });
 
 $("#play-btn").addEventListener("click", ()=>{ playSound("tap"); showScreen("select"); });
 $("#mute-btn-title").addEventListener("click", toggleMute);
 $("#mute-btn-play").addEventListener("click", toggleMute);
+$("#music-btn-title").addEventListener("click", toggleMusic);
+$("#music-btn-play").addEventListener("click", toggleMusic);
 $("#lang-btn").addEventListener("click", toggleLanguage);
 $("#reset-btn").addEventListener("click", ()=>{
   if(confirm(t("resetConfirm"))){
@@ -1314,8 +1623,13 @@ $("#reset-btn").addEventListener("click", ()=>{
 });
 
 // init
+wheelEl = $("#wheel-rot");
 wirePad();
+// pedals are touch-only; the wheel stays visible for keyboard steering
+const HAS_TOUCH = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+if(!HAS_TOUCH){ const pad = $("#pad"); if(pad) pad.style.display = "none"; }
 refreshMute();
+refreshMusicBtn();
 applyLanguage();
 </script>
 </body>
