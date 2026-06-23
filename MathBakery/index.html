@@ -222,6 +222,12 @@
 
   /* ---------- Level select ---------- */
   .select-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .lang-pill{
+    background:#fff; border:none; border-radius:999px; padding:8px 16px; font-weight:900;
+    box-shadow:0 4px 0 rgba(0,0,0,.1); font-size:1.05rem; white-space:nowrap;
+    font-family:inherit; color:inherit; cursor:pointer;
+  }
+  .lang-pill:active{transform:translateY(2px);}
   .grid-levels{display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:14px;}
   .level-card{
     background:#fff; border-radius:20px; box-shadow:var(--shadow); padding:14px 10px;
@@ -325,6 +331,7 @@
       <button class="icon-btn" data-go="title" aria-label="Home" title="Home">🏠</button>
       <div class="level-tag" style="flex:1"><span data-i18n="pickBakery">Pick a Bakery</span><small data-i18n="pickSub">your math adventure</small></div>
       <div class="coins" id="coins-select">🪙 0</div>
+      <button class="lang-pill" id="lang-pill-select" type="button" data-i18n-title="changeLang" title="Change language">🇬🇧 EN</button>
     </div>
     <div class="grid-levels" id="levels-grid"></div>
   </section>
@@ -423,7 +430,7 @@ const LEVELS = [
 // Language is a saved setting (save.lang); switch it with the title-screen button.
 const I18N = {
   en:{
-    dir:"ltr", langName:"English",
+    dir:"ltr", langName:"English", langPill:"🇬🇧 EN", changeLang:"Change language",
     title:"Math Bakery",
     tagline:"Serve yummy treats by solving math!",
     play:"▶ Play",
@@ -464,7 +471,7 @@ const I18N = {
     lvl_cookieTrays:"Cookie Trays", lvl_royalRows:"Royal Rows", lvl_masterBaker:"Master Baker",
   },
   he:{
-    dir:"rtl", langName:"עברית",
+    dir:"rtl", langName:"עברית", langPill:"🇮🇱 עב", changeLang:"החלף שפה",
     title:"מאפיית החשבון",
     tagline:"פותרים תרגילים ומגישים פינוקים טעימים!",
     play:"▶ שחקו",
@@ -854,6 +861,7 @@ function showScreen(name){
 // =========================================================
 function renderSelect(){
   $("#coins-select").textContent = "🪙 "+save.coins;
+  $("#lang-pill-select").textContent = t("langPill");
   const grid = $("#levels-grid");
   grid.innerHTML = "";
   let lastWorld = null;
@@ -1168,6 +1176,7 @@ $("#mute-btn-play").addEventListener("click", toggleMute);
 $("#music-btn-title").addEventListener("click", toggleMusic);
 $("#music-btn-play").addEventListener("click", toggleMusic);
 $("#lang-btn").addEventListener("click", toggleLanguage);
+$("#lang-pill-select").addEventListener("click", toggleLanguage);
 $("#reset-btn").addEventListener("click", ()=>{
   if(confirm(t("resetConfirm"))){
     const lang = save.lang;                 // keep language + cosmetics across a reset

@@ -74,19 +74,27 @@
 
   /* ---------- On-screen keyboard (touch devices only) ---------- */
   .kbd{
-    display:flex; flex-wrap:wrap; gap:5px; justify-content:center;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
     margin:8px 2px 0; touch-action:manipulation; user-select:none;
   }
+  .kbd-keys{ display:flex; flex-direction:column; gap:5px; align-items:center; }
+  .kbd-row{ display:flex; gap:4px; justify-content:center; }
   .kbd .key{
-    font-family:inherit; font-weight:800; font-size:1.2rem; color:var(--ink);
-    width:min(9vw,38px); height:42px; border:none; border-radius:10px;
+    font-family:inherit; font-weight:800; font-size:1.1rem; color:var(--ink);
+    width:min(8.5vw,34px); height:42px; border:none; border-radius:9px;
     background:#fff; box-shadow:0 3px 0 rgba(0,0,0,.12); cursor:pointer;
     display:flex; align-items:center; justify-content:center;
     -webkit-tap-highlight-color:transparent;
   }
   .kbd .key:active{ transform:translateY(2px); background:#dcebff; box-shadow:0 1px 0 rgba(0,0,0,.12); }
+  .kbd-layout{
+    font-family:inherit; font-weight:800; font-size:.85rem; color:var(--ink-soft);
+    background:#fff; border:none; border-radius:999px; padding:5px 14px;
+    box-shadow:0 3px 0 rgba(0,0,0,.1); cursor:pointer;
+  }
+  .kbd-layout:active{ transform:translateY(2px); }
   /* let the arena shrink so the keyboard fits on small screens */
-  body.kbd-on .arena{ min-height:240px; }
+  body.kbd-on .arena{ min-height:220px; }
   .icon-btn.is-off{opacity:.4; filter:grayscale(1);}
   .mini-link{background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:.95rem;}
 
@@ -113,9 +121,11 @@
   .level-tag{font-weight:900; font-size:1.05rem; text-align:center; line-height:1.1;}
   .level-tag small{display:block; font-weight:700; color:var(--ink-soft); font-size:.8rem;}
   .lang-pill{
-    background:#fff; border-radius:999px; padding:8px 16px; font-weight:900;
+    background:#fff; border:none; border-radius:999px; padding:8px 16px; font-weight:900;
     box-shadow:0 4px 0 rgba(0,0,0,.1); font-size:1.05rem; white-space:nowrap;
+    font-family:inherit; color:inherit; cursor:pointer;
   }
+  .lang-pill:active{transform:translateY(2px);}
 
   /* ---------- Progress row ---------- */
   .progress-row{display:flex; align-items:center; gap:12px; margin:4px 2px 10px;}
@@ -433,7 +443,7 @@
     <div class="select-head">
       <button class="icon-btn" data-go="title">🏠</button>
       <div class="level-tag" style="flex:1"><span data-i18n="pickLevel">Pick a Level</span><small data-i18n="pickSub">your typing adventure</small></div>
-      <div class="lang-pill" id="lang-pill-select">🇬🇧 EN</div>
+      <button class="lang-pill" id="lang-pill-select" type="button" data-i18n-title="changeLang" title="Change language">🇬🇧 EN</button>
     </div>
     <button class="endless-banner" id="endless-challenge">
       <div class="eb-title">♾️ <span data-i18n="endlessChallenge">Endless Challenge</span></div>
@@ -583,7 +593,10 @@
     </div>
 
     <div class="shelf" id="shelf"></div>
-    <div class="kbd" id="kbd" aria-hidden="true"></div>
+    <div class="kbd" id="kbd" aria-hidden="true">
+      <div class="kbd-keys" id="kbd-keys"></div>
+      <button class="kbd-layout" id="kbd-layout-btn" type="button"></button>
+    </div>
   </section>
 
   <!-- ============ LEVEL COMPLETE ============ -->
@@ -779,6 +792,7 @@ const I18N = {
     reset:"Reset progress",
     allGames:"🎮 All games",
     keyboard:"Keyboard",
+    kbdAbc:"ABC", kbdStd:"QWERTY", changeLang:"Change language",
     customize:"🎨 Customize",
     cz_title:"Make it yours",
     cz_jacket:"Apron",
@@ -826,6 +840,7 @@ const I18N = {
     reset:"איפוס התקדמות",
     allGames:"🎮 כל המשחקים",
     keyboard:"מקלדת",
+    kbdAbc:"א-ב", kbdStd:"רגילה", changeLang:"החלף שפה",
     customize:"🎨 התאמה אישית",
     cz_title:"עיצוב אישי",
     cz_jacket:"סינר",
@@ -881,7 +896,7 @@ const SAVE_KEY = "fallingPlates.save";
 // Player-chosen cosmetics (shared, not per-language).
 const DEFAULT_COSMETICS = {jacket:"#ffffff", rim:"#7cc6ff"};
 const DEFAULT_SAVE = {
-  lang:DEFAULT_LANG, muted:false, music:true, showKbd:true,
+  lang:DEFAULT_LANG, muted:false, music:true, showKbd:true, kbdLayout:"standard",
   cosmetics:{...DEFAULT_COSMETICS},
   progress:{ he:{unlockedLevel:0, starsByLevel:{}, endlessBest:0}, en:{unlockedLevel:0, starsByLevel:{}, endlessBest:0} },
 };
@@ -1457,22 +1472,39 @@ function refreshFocus(){
 // =========================================================
 const HAS_TOUCH = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 
-// Keys for the current language: the alphabet, plus Hebrew final forms (which
-// appear in words but not in ALPHABETS, which is used for letter-mode plates).
-function kbdLetters(){
-  const base = ALPHABETS[save.lang] || [];
-  return save.lang === "he" ? base.concat(["ך","ם","ן","ף","ץ"]) : base.slice();
-}
+// Keyboard layouts, as rows. "standard" = QWERTY / the standard Hebrew layout
+// (matches a physical keyboard); "abc" = alphabetical. Hebrew rows include the
+// 5 final forms (ך ם ן ף ץ) since they appear in words.
+const KBD_LAYOUTS = {
+  en: {
+    standard: ["qwertyuiop", "asdfghjkl", "zxcvbnm"],
+    abc:      ["abcdefghi", "jklmnopqr", "stuvwxyz"],
+  },
+  he: {
+    standard: ["קראטוןםפ", "שדגכעיחלךף", "זסבהנמצתץ"],
+    abc:      ["אבגדהוזחט", "יכלמנסעפצ", "קרשתךםןףץ"],
+  },
+};
 function buildKbd(){
-  const kbd = $("#kbd"); if(!kbd) return;
-  kbd.innerHTML = "";
-  for(const ch of kbdLetters()){
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "key"; b.textContent = ch;
-    // pointerdown (not click) for snappy input; preventDefault stops focus/zoom.
-    b.addEventListener("pointerdown", e=>{ e.preventDefault(); pressKey(ch); });
-    kbd.appendChild(b);
+  const keys = $("#kbd-keys"); if(!keys) return;
+  const layout = (KBD_LAYOUTS[save.lang] || KBD_LAYOUTS.en);
+  const rows = layout[save.kbdLayout] || layout.standard;
+  // QWERTY/standard keep physical (LTR) order; Hebrew alphabetical reads RTL.
+  keys.style.direction = (save.kbdLayout === "abc" && save.lang === "he") ? "rtl" : "ltr";
+  keys.innerHTML = "";
+  for(const row of rows){
+    const r = document.createElement("div"); r.className = "kbd-row";
+    for(const ch of row){
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "key"; b.textContent = ch;
+      // pointerdown (not click) for snappy input; preventDefault stops focus/zoom.
+      b.addEventListener("pointerdown", e=>{ e.preventDefault(); pressKey(ch); });
+      r.appendChild(b);
+    }
+    keys.appendChild(r);
   }
+  const lb = $("#kbd-layout-btn");
+  if(lb) lb.textContent = "⇄ " + t(save.kbdLayout === "abc" ? "kbdStd" : "kbdAbc");
 }
 // Show the keyboard + its toggle button only on touch devices; the toggle flips
 // save.showKbd. body.kbd-on lets the arena shrink to make room (see CSS).
@@ -1484,6 +1516,7 @@ function refreshKbd(){
   document.body.classList.toggle("kbd-on", on);
 }
 function toggleKbd(){ save.showKbd = !save.showKbd; persist(); refreshKbd(); playSound("tap"); }
+function toggleKbdLayout(){ save.kbdLayout = (save.kbdLayout === "abc" ? "standard" : "abc"); persist(); buildKbd(); playSound("tap"); }
 
 // =========================================================
 //  Saving / smashing plates
@@ -1812,6 +1845,7 @@ $("#mute-btn-play").addEventListener("click", toggleMute);
 $("#music-btn-title").addEventListener("click", toggleMusic);
 $("#music-btn-play").addEventListener("click", toggleMusic);
 $("#lang-btn").addEventListener("click", toggleLanguage);
+$("#lang-pill-select").addEventListener("click", toggleLanguage);
 $("#reset-btn").addEventListener("click", ()=>{
   if(confirm(t("resetConfirm"))){
     const lang = save.lang, cosmetics = {...save.cosmetics};  // keep language + cosmetics
@@ -1823,6 +1857,7 @@ $("#reset-btn").addEventListener("click", ()=>{
 });
 
 $("#kbd-btn").addEventListener("click", toggleKbd);
+$("#kbd-layout-btn").addEventListener("click", toggleKbdLayout);
 
 // init
 applyCosmetics();

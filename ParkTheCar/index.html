@@ -99,9 +99,11 @@
   .level-tag{font-weight:900; font-size:1.05rem; text-align:center; line-height:1.1;}
   .level-tag small{display:block; font-weight:700; color:var(--ink-soft); font-size:.8rem;}
   .lang-pill{
-    background:#fff; border-radius:999px; padding:8px 16px; font-weight:900;
+    background:#fff; border:none; border-radius:999px; padding:8px 16px; font-weight:900;
     box-shadow:0 4px 0 rgba(0,0,0,.1); font-size:1.05rem; white-space:nowrap;
+    font-family:inherit; color:inherit; cursor:pointer;
   }
+  .lang-pill:active{transform:translateY(2px);}
   .lives{font-size:1.25rem; white-space:nowrap; letter-spacing:1px;}
 
   /* ---------- Play arena ---------- */
@@ -299,7 +301,7 @@
     <div class="select-head">
       <button class="icon-btn" data-go="title" aria-label="Home">🏠</button>
       <div class="level-tag" style="flex:1"><span data-i18n="pickLevel">Pick a Spot</span><small data-i18n="pickSub">your parking adventure</small></div>
-      <div class="lang-pill" id="lang-pill-select">🇬🇧 EN</div>
+      <button class="lang-pill" id="lang-pill-select" type="button" data-i18n-title="changeLang" title="Change language">🇬🇧 EN</button>
     </div>
     <div class="grid-levels" id="levels-grid"></div>
   </section>
@@ -558,7 +560,7 @@ const I18N = {
     sound:"Sound",
     music:"Music",
     reset:"Reset progress",
-    allGames:"🎮 All games",
+    allGames:"🎮 All games", changeLang:"Change language",
     customize:"🎨 Customize",
     cz_title:"Style your car",
     cz_color:"Car colour",
@@ -599,7 +601,7 @@ const I18N = {
     sound:"צליל",
     music:"מוזיקה",
     reset:"איפוס התקדמות",
-    allGames:"🎮 כל המשחקים",
+    allGames:"🎮 כל המשחקים", changeLang:"החלף שפה",
     customize:"🎨 התאמה אישית",
     cz_title:"שדרגו את הרכב",
     cz_color:"צבע הרכב",
@@ -1619,6 +1621,7 @@ $("#mute-btn-play").addEventListener("click", toggleMute);
 $("#music-btn-title").addEventListener("click", toggleMusic);
 $("#music-btn-play").addEventListener("click", toggleMusic);
 $("#lang-btn").addEventListener("click", toggleLanguage);
+$("#lang-pill-select").addEventListener("click", toggleLanguage);
 $("#reset-btn").addEventListener("click", ()=>{
   if(confirm(t("resetConfirm"))){
     const lang = save.lang;                 // keep the chosen language across a reset
